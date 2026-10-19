@@ -35,6 +35,12 @@
     .poster { background-size: cover; background-position: center; }
     .range-track { accent-color: #ff7759; }
     .social-panel button { cursor: pointer; }
+    @keyframes seek-feedback {
+      0% { opacity: 0; transform: translateY(10px) scale(.85); }
+      20%, 75% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-8px) scale(.95); }
+    }
+    .seek-feedback-active { animation: seek-feedback .7s ease-out forwards; }
     ::selection { background: rgba(255,119,89,.35); }
   </style>
 </head>
@@ -225,7 +231,13 @@
               Tu navegador no admite la reproducción de video.
             </video>
             <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"></div>
-            <button id="playerToggle" aria-label="Reproducir video" class="absolute left-1/2 top-1/2 z-10 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow-lg transition hover:scale-105"><i data-lucide="play" class="ml-0.5 h-5 w-5 fill-current"></i></button>
+            <div id="seekZones" class="absolute inset-x-0 top-0 bottom-12 z-10 flex touch-manipulation" aria-hidden="true">
+              <div class="w-1/2"></div>
+              <div class="w-1/2"></div>
+              <span id="rewindFeedback" class="pointer-events-none absolute left-1/4 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/70 px-4 py-2 text-sm font-bold text-white">-10s</span>
+              <span id="forwardFeedback" class="pointer-events-none absolute left-3/4 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/70 px-4 py-2 text-sm font-bold text-white">+10s</span>
+            </div>
+            <button id="playerToggle" aria-label="Reproducir video" class="absolute left-1/2 top-1/2 z-20 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow-lg transition hover:scale-105"><i data-lucide="play" class="ml-0.5 h-5 w-5 fill-current"></i></button>
             <div class="pointer-events-none absolute inset-x-4 top-4 z-10 flex items-end justify-between gap-3 sm:inset-x-5 sm:top-5">
               <div><p class="text-[10px] font-semibold uppercase tracking-widest text-white/70">Reproductor · muestra de prueba</p><p class="mt-1 text-sm font-bold text-white">Big Buck Bunny</p></div>
               <span id="clipTime" class="font-mono text-[10px] text-white/90">00:00 / --:--</span>
@@ -603,6 +615,39 @@
     clipRange.addEventListener('input', () => {
       clipVideo.currentTime = Number(clipRange.value);
       updateClip();
+    });
+
+    const seekZones = document.getElementById('seekZones');
+    let lastSeekTap = null;
+    let seekFeedbackTimer;
+    seekZones.addEventListener('pointerup', event => {
+      if (event.button !== 0) return;
+      const bounds = seekZones.getBoundingClientRect();
+      const side = event.clientX < bounds.left + bounds.width / 2 ? 'left' : 'right';
+      const now = performance.now();
+      if (!lastSeekTap || lastSeekTap.side !== side || now - lastSeekTap.time >= 300) {
+        lastSeekTap = { side, time: now };
+        return;
+      }
+
+      lastSeekTap = null;
+      if (clipVideo.readyState < HTMLMediaElement.HAVE_METADATA || !Number.isFinite(clipVideo.currentTime)) return;
+      const duration = Number.isFinite(clipVideo.duration) ? clipVideo.duration : Infinity;
+      clipVideo.currentTime = Math.max(0, Math.min(clipVideo.currentTime + (side === 'left' ? -10 : 10), duration));
+
+      const feedback = document.getElementById(side === 'left' ? 'rewindFeedback' : 'forwardFeedback');
+      const otherFeedback = document.getElementById(side === 'left' ? 'forwardFeedback' : 'rewindFeedback');
+      otherFeedback.classList.add('hidden');
+      feedback.classList.add('hidden');
+      feedback.classList.remove('seek-feedback-active');
+      void feedback.offsetWidth;
+      feedback.classList.remove('hidden');
+      feedback.classList.add('seek-feedback-active');
+      clearTimeout(seekFeedbackTimer);
+      seekFeedbackTimer = setTimeout(() => {
+        feedback.classList.add('hidden');
+        feedback.classList.remove('seek-feedback-active');
+      }, 700);
     });
 
     const playerToggle = document.getElementById('playerToggle');
