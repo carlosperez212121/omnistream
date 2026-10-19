@@ -34,6 +34,7 @@
     body { background-image: radial-gradient(ellipse at 50% -20%, rgba(255,119,89,.09), transparent 38%); }
     .poster { background-size: cover; background-position: center; }
     .range-track { accent-color: #ff7759; }
+    .social-panel button { cursor: pointer; }
     ::selection { background: rgba(255,119,89,.35); }
   </style>
 </head>
@@ -133,21 +134,21 @@
         <a href="#comunidad" class="text-sm font-semibold text-ember hover:text-orange-300">Ver catálogo <span aria-hidden="true">→</span></a>
       </div>
       <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-        <article class="group min-w-0">
+        <article class="group min-w-0 cursor-pointer">
           <div class="poster relative aspect-[1.5] overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-950 via-violet-900 to-rose-950" style="background-image:linear-gradient(135deg,rgba(35,32,78,.25),rgba(11,12,15,.2)),url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute left-3 top-3 rounded-full bg-gold px-2 py-1 text-[9px] font-black uppercase tracking-wider text-ink">VIP</span>
             <span class="absolute bottom-3 left-3 rounded-full bg-black/50 px-2 py-1 text-[10px] font-medium text-white">Serie · 6 episodios</span>
           </div>
           <h4 class="mt-3 truncate text-sm font-semibold text-white">La distancia azul</h4><p class="mt-1 text-xs text-zinc-500">Drama · Nuevos episodios</p>
         </article>
-        <article class="group min-w-0">
+        <article class="group min-w-0 cursor-pointer">
           <div class="poster relative aspect-[1.5] overflow-hidden rounded-2xl bg-gradient-to-br from-orange-950 to-amber-700" style="background-image:linear-gradient(135deg,rgba(72,27,8,.25),rgba(11,12,15,.2)),url('https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute left-3 top-3 rounded-full bg-gold px-2 py-1 text-[9px] font-black uppercase tracking-wider text-ink">VIP</span>
             <span class="absolute bottom-3 left-3 rounded-full bg-black/50 px-2 py-1 text-[10px] font-medium text-white">Documental · 48 min</span>
           </div>
           <h4 class="mt-3 truncate text-sm font-semibold text-white">Luz de invierno</h4><p class="mt-1 text-xs text-zinc-500">Naturaleza · 4K</p>
         </article>
-        <article class="group min-w-0">
+        <article class="group min-w-0 cursor-pointer">
           <div class="poster relative aspect-[1.5] overflow-hidden rounded-2xl bg-gradient-to-br from-teal-950 to-sky-800" style="background-image:linear-gradient(135deg,rgba(6,54,66,.25),rgba(11,12,15,.2)),url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute left-3 top-3 rounded-full bg-gold px-2 py-1 text-[9px] font-black uppercase tracking-wider text-ink">VIP</span>
             <span class="absolute bottom-3 left-3 rounded-full bg-black/50 px-2 py-1 text-[10px] font-medium text-white">Película · 1 h 52 min</span>
@@ -183,25 +184,25 @@
       </div>
 
       <div id="videoGrid" class="mt-5 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
-        <article class="community-card group" data-category="música" data-search="sesión al amanecer música noa rivera">
+        <article class="community-card group cursor-pointer" data-category="música" data-search="sesión al amanecer música noa rivera">
           <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-rose-950 to-amber-700 text-left" aria-label="Reproducir Sesión al amanecer" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">08:42</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
           </button>
           <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-rose-900 text-[10px] font-bold">NR</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">Sesión al amanecer</h3><p class="mt-1 truncate text-xs text-zinc-500">Noa Rivera · 12 mil vistas</p></div></div>
         </article>
-        <article class="community-card group" data-category="viajes" data-search="caminos de sal viajes tomás león">
+        <article class="community-card group cursor-pointer" data-category="viajes" data-search="caminos de sal viajes tomás león">
           <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-950 to-orange-700 text-left" aria-label="Reproducir Caminos de sal" style="background-image:linear-gradient(0deg,rgba(0,0,0,.4),transparent 60%),url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">12:06</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
           </button>
           <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sky-900 text-[10px] font-bold">TL</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">Caminos de sal</h3><p class="mt-1 truncate text-xs text-zinc-500">Tomás León · 8,4 mil vistas</p></div></div>
         </article>
-        <article class="community-card group" data-category="ideas" data-search="el color del silencio ideas taller sur">
+        <article class="community-card group cursor-pointer" data-category="ideas" data-search="el color del silencio ideas taller sur">
           <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-violet-950 to-pink-800 text-left" aria-label="Reproducir El color del silencio" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">06:18</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
           </button>
           <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violet-900 text-[10px] font-bold">TS</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">El color del silencio</h3><p class="mt-1 truncate text-xs text-zinc-500">Taller Sur · 5,1 mil vistas</p></div></div>
         </article>
-        <article class="community-card group" data-category="música" data-search="frecuencia de barrio música colectivo pulso">
+        <article class="community-card group cursor-pointer" data-category="música" data-search="frecuencia de barrio música colectivo pulso">
           <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950 to-cyan-800 text-left" aria-label="Reproducir Frecuencia de barrio" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">15:31</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
           </button>
@@ -219,14 +220,14 @@
           <p class="mt-3 max-w-lg text-sm leading-6 text-zinc-400">Guarda el momento que te encantó. Ajusta el fragmento, prepara el formato vertical y compártelo con la comunidad.</p>
 
           <div class="relative mt-6 aspect-video overflow-hidden rounded-2xl border border-line bg-black">
-            <video id="clipVideo" class="absolute inset-0 h-full w-full object-cover" controls playsinline preload="metadata" poster="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1000&q=85">
-              <source src="https://media.w3.org/2010/05/sintel/trailer.mp4" type="video/mp4">
+            <video id="clipVideo" class="absolute inset-0 h-full w-full object-cover" controls playsinline preload="metadata">
+              <source src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
               Tu navegador no admite la reproducción de video.
             </video>
             <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"></div>
             <button id="playerToggle" aria-label="Reproducir video" class="absolute left-1/2 top-1/2 z-10 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow-lg transition hover:scale-105"><i data-lucide="play" class="ml-0.5 h-5 w-5 fill-current"></i></button>
             <div class="pointer-events-none absolute inset-x-4 top-4 z-10 flex items-end justify-between gap-3 sm:inset-x-5 sm:top-5">
-              <div><p class="text-[10px] font-semibold uppercase tracking-widest text-white/70">Reproductor · documental</p><p class="mt-1 text-sm font-bold text-white">Luz de invierno</p></div>
+              <div><p class="text-[10px] font-semibold uppercase tracking-widest text-white/70">Reproductor · muestra de prueba</p><p class="mt-1 text-sm font-bold text-white">Big Buck Bunny</p></div>
               <span id="clipTime" class="font-mono text-[10px] text-white/90">00:00 / --:--</span>
             </div>
           </div>
@@ -310,6 +311,15 @@
         <p id="authMessage" class="hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-200" role="alert"></p>
         <button id="authSubmit" type="submit" class="w-full rounded-full bg-ember px-4 py-3 text-sm font-bold text-ink transition hover:bg-orange-300">Iniciar sesión</button>
       </form>
+      <button id="googleSignIn" type="button" class="mt-4 inline-flex w-full items-center justify-center gap-3 rounded-full border border-white/15 bg-white px-4 py-3 text-sm font-bold text-zinc-900 transition hover:bg-zinc-200">
+        <svg aria-hidden="true" viewBox="0 0 48 48" class="h-5 w-5">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z" transform="translate(0 4)"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.73 7.18l7.64 5.93c4.46-4.12 7.13-10.18 7.13-17.58Z"/>
+          <path fill="#FBBC05" d="M10.53 28.59a14.4 14.4 0 0 1 0-9.18l-7.98-6.19a23.9 23.9 0 0 0 0 21.56l7.98-6.19Z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.87l-7.64-5.93c-2.13 1.43-4.86 2.28-8.26 2.28-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/>
+        </svg>
+        Continuar con Google
+      </button>
       <p class="mt-5 text-center text-sm text-zinc-400"><span id="authSwitchText">¿No tienes cuenta?</span>
         <button id="authModeToggle" type="button" class="ml-1 font-semibold text-ember hover:text-orange-300">Regístrate</button>
       </p>
@@ -473,6 +483,20 @@
       if (event.key === 'Escape' && !authModal.classList.contains('hidden')) closeAuthModal();
     });
     document.getElementById('authModeToggle').addEventListener('click', () => setAuthMode(authMode === 'signin' ? 'signup' : 'signin'));
+    document.getElementById('googleSignIn').addEventListener('click', async event => {
+      if (!ensureSupabase()) return;
+      const button = event.currentTarget;
+      button.disabled = true;
+      authMessage.classList.add('hidden');
+      try {
+        const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+        if (error) throw error;
+      } catch (error) {
+        showAuthMessage(error.message || 'No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
+      } finally {
+        button.disabled = false;
+      }
+    });
     authForm.addEventListener('submit', async event => {
       event.preventDefault();
       if (!ensureSupabase()) return;
@@ -698,6 +722,251 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.add('opacity-0', 'translate-y-2'), 2600);
     }
+
+    let nextCommentId = 1;
+
+    function createSocialButton(action, icon, label, count = null) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.socialAction = action;
+      button.setAttribute('aria-label', label);
+      if (action === 'like' || action === 'dislike') button.setAttribute('aria-pressed', 'false');
+      button.className = 'inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-ember/40 hover:text-white focus:outline-none focus:ring-2 focus:ring-ember/40';
+      button.innerHTML = `<i data-lucide="${icon}" class="h-4 w-4"></i><span>${label}</span>${count === null ? '' : `<span data-social-count="${action}">${count}</span>`}`;
+      return button;
+    }
+
+    function countComments(comments) {
+      return comments.reduce((total, comment) => total + 1 + countComments(comment.replies), 0);
+    }
+
+    function updateReactionButton(panel, action, selected) {
+      const button = panel.querySelector(`[data-social-action="${action}"]`);
+      button.setAttribute('aria-pressed', String(selected));
+      button.classList.toggle('text-ember', selected);
+      button.classList.toggle('text-zinc-300', !selected);
+    }
+
+    function appendCommentForm(container, parentId = null) {
+      const form = document.createElement('form');
+      form.dataset.socialCommentForm = '';
+      if (parentId) form.dataset.parentId = parentId;
+      form.className = 'mt-3 flex flex-col gap-2 sm:flex-row';
+      const input = document.createElement('input');
+      input.name = 'comment';
+      input.type = 'text';
+      input.maxLength = 500;
+      input.required = true;
+      input.autocomplete = 'off';
+      input.placeholder = parentId ? 'Escribe una respuesta…' : 'Añade un comentario…';
+      input.setAttribute('aria-label', parentId ? 'Escribe una respuesta' : 'Añade un comentario');
+      input.className = 'min-w-0 flex-1 rounded-xl border border-line bg-panel px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-ember/50';
+      const submit = document.createElement('button');
+      submit.type = 'submit';
+      submit.className = 'inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-ember px-4 py-2.5 text-xs font-bold text-ink transition hover:bg-orange-300';
+      submit.innerHTML = '<i data-lucide="send" class="h-4 w-4"></i> Publicar';
+      form.append(input, submit);
+      if (parentId) {
+        const cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.dataset.socialAction = 'cancel-reply';
+        cancel.className = 'rounded-xl px-3 py-2 text-xs text-zinc-400 transition hover:text-white';
+        cancel.textContent = 'Cancelar';
+        form.append(cancel);
+      }
+      container.append(form);
+    }
+
+    function renderComments(item, state) {
+      const list = item.querySelector('[data-social-comments]');
+      const count = item.querySelector('[data-social-comment-count]');
+      list.replaceChildren();
+      count.textContent = String(countComments(state.comments));
+
+      function appendComment(comment, container, depth = 0) {
+        const row = document.createElement('article');
+        row.dataset.commentId = comment.id;
+        row.className = `mt-3 rounded-xl bg-panel/70 p-3${depth ? ' ml-3 border-l border-line sm:ml-5' : ''}`;
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between gap-3';
+        const author = document.createElement('span');
+        author.className = 'text-xs font-semibold text-zinc-200';
+        author.textContent = 'Tú';
+        const body = document.createElement('p');
+        body.className = 'mt-2 break-words text-sm leading-5 text-zinc-300';
+        body.textContent = comment.text;
+        const actions = document.createElement('div');
+        actions.className = 'mt-2 flex items-center gap-4';
+        const like = document.createElement('button');
+        like.type = 'button';
+        like.dataset.socialAction = 'comment-like';
+        like.setAttribute('aria-pressed', String(comment.liked));
+        like.setAttribute('aria-label', comment.liked ? 'Quitar me gusta del comentario' : 'Me gusta este comentario');
+        like.className = `inline-flex items-center gap-1.5 text-xs transition hover:text-ember ${comment.liked ? 'text-ember' : 'text-zinc-500'}`;
+        like.innerHTML = `<i data-lucide="heart" class="h-3.5 w-3.5${comment.liked ? ' fill-current' : ''}"></i><span>${comment.likes}</span>`;
+        const reply = document.createElement('button');
+        reply.type = 'button';
+        reply.dataset.socialAction = 'reply';
+        reply.className = 'inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-white';
+        reply.innerHTML = '<i data-lucide="reply" class="h-3.5 w-3.5"></i>Responder';
+        actions.append(like, reply);
+        header.append(author);
+        row.append(header, body, actions);
+        if (state.replyingTo === comment.id) appendCommentForm(row, comment.id);
+        comment.replies.forEach(child => appendComment(child, row, depth + 1));
+        container.append(row);
+      }
+
+      state.comments.forEach(comment => appendComment(comment, list));
+      if (state.replyingTo === null) {
+        const form = item.querySelector('[data-social-comment-form]');
+        if (form?.dataset.parentId) form.remove();
+      }
+      lucide.createIcons();
+    }
+
+    function createSocialPanel(target, id, extraClasses = '') {
+      target.id = id;
+      const state = { liked: false, disliked: false, likes: 0, comments: [], replyingTo: null };
+
+      const panel = document.createElement('div');
+      panel.className = `social-panel rounded-2xl border border-line bg-ink/70 p-3 sm:p-4 ${extraClasses}`.trim();
+      panel.dataset.socialItem = id;
+      const actions = document.createElement('div');
+      actions.className = 'flex flex-wrap items-center gap-2';
+      actions.append(
+        createSocialButton('like', 'thumbs-up', 'Me gusta', state.likes),
+        createSocialButton('dislike', 'thumbs-down', 'No me gusta'),
+        createSocialButton('share', 'share-2', 'Compartir')
+      );
+
+      const commentsSection = document.createElement('section');
+      commentsSection.className = 'mt-4 border-t border-line pt-3';
+      const heading = document.createElement('h3');
+      heading.className = 'flex items-center gap-2 text-xs font-semibold text-zinc-200';
+      heading.innerHTML = '<i data-lucide="message-circle" class="h-4 w-4 text-zinc-400"></i>Comentarios <span data-social-comment-count class="text-zinc-500">0</span>';
+      const list = document.createElement('div');
+      list.dataset.socialComments = '';
+      appendCommentForm(commentsSection);
+      commentsSection.prepend(heading, list);
+      panel.append(actions, commentsSection);
+      target.append(panel);
+
+      panel.addEventListener('click', async event => {
+        const button = event.target.closest('button[data-social-action]');
+        if (!button) return;
+        const action = button.dataset.socialAction;
+        const commentRow = button.closest('[data-comment-id]');
+        if (action === 'share') {
+          const url = new URL(window.location.href);
+          url.hash = id;
+          try {
+            if (navigator.clipboard?.writeText) {
+              await navigator.clipboard.writeText(url.href);
+            } else {
+              const temporaryInput = document.createElement('textarea');
+              temporaryInput.value = url.href;
+              temporaryInput.setAttribute('readonly', '');
+              temporaryInput.className = 'fixed left-[-9999px] top-0';
+              document.body.append(temporaryInput);
+              let copied;
+              try {
+                temporaryInput.select();
+                copied = document.execCommand('copy');
+              } finally {
+                temporaryInput.remove();
+              }
+              if (!copied) throw new Error('El navegador no permitió copiar el enlace.');
+            }
+            showToast('Enlace copiado al portapapeles.');
+          } catch (error) {
+            showToast(error.message || 'No se pudo copiar el enlace.');
+          }
+          return;
+        }
+        if (action === 'like') {
+          state.liked = !state.liked;
+          if (state.liked) state.disliked = false;
+          state.likes += state.liked ? 1 : -1;
+          updateReactionButton(panel, 'like', state.liked);
+          updateReactionButton(panel, 'dislike', state.disliked);
+          button.querySelector('[data-social-count]').textContent = String(state.likes);
+          return;
+        }
+        if (action === 'dislike') {
+          const hadLike = state.liked;
+          state.disliked = !state.disliked;
+          if (state.disliked) state.liked = false;
+          if (hadLike && !state.liked) state.likes--;
+          updateReactionButton(panel, 'like', state.liked);
+          updateReactionButton(panel, 'dislike', state.disliked);
+          panel.querySelector('[data-social-count="like"]').textContent = String(state.likes);
+          return;
+        }
+        if (action === 'reply') {
+          const commentId = commentRow.dataset.commentId;
+          state.replyingTo = state.replyingTo === commentId ? null : commentId;
+          renderComments(panel, state);
+          if (state.replyingTo) panel.querySelector(`[data-parent-id="${state.replyingTo}"] input`)?.focus();
+          return;
+        }
+        if (action === 'cancel-reply') {
+          state.replyingTo = null;
+          renderComments(panel, state);
+          return;
+        }
+        if (action === 'comment-like') {
+          const comment = findComment(state.comments, commentRow.dataset.commentId);
+          if (!comment) return;
+          comment.liked = !comment.liked;
+          comment.likes += comment.liked ? 1 : -1;
+          renderComments(panel, state);
+        }
+      });
+
+      panel.addEventListener('submit', event => {
+        const form = event.target.closest('form[data-social-comment-form]');
+        if (!form) return;
+        event.preventDefault();
+        const input = form.querySelector('[name="comment"]');
+        const text = input.value.trim();
+        if (!text) return;
+        const comment = { id: `comment-${nextCommentId++}`, text, likes: 0, liked: false, replies: [] };
+        const parentId = form.dataset.parentId;
+        if (parentId) {
+          const parent = findComment(state.comments, parentId);
+          if (!parent) return;
+          parent.replies.push(comment);
+        } else {
+          state.comments.push(comment);
+        }
+        state.replyingTo = null;
+        renderComments(panel, state);
+      });
+
+      renderComments(panel, state);
+      lucide.createIcons();
+    }
+
+    function findComment(comments, id) {
+      for (const comment of comments) {
+        if (comment.id === id) return comment;
+        const nested = findComment(comment.replies, id);
+        if (nested) return nested;
+      }
+      return null;
+    }
+
+    [...document.querySelectorAll('#originales article')].forEach((article, index) => {
+      const id = `omni-original-${index + 1}`;
+      createSocialPanel(article, id, index === 0 ? 'mx-6 mb-6 sm:mx-10 lg:mx-14' : 'mt-4');
+    });
+    [...document.querySelectorAll('#comunidad .community-card')].forEach((card, index) => {
+      createSocialPanel(card, `creator-video-${index + 1}`, 'mt-3');
+    });
+    const clipperSocialHost = document.createElement('div');
+    document.getElementById('clipper').append(clipperSocialHost);
+    createSocialPanel(clipperSocialHost, 'clipper-player', 'mx-6 mb-6 sm:mx-9 lg:mx-11');
   </script>
 </body>
 </html>
