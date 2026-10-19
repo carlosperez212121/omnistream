@@ -55,7 +55,13 @@
       <nav class="hidden items-center gap-6 pl-6 text-sm font-medium text-zinc-400 md:flex" aria-label="Navegación principal">
         <a class="transition hover:text-white" href="#originales">Originales</a>
         <a class="transition hover:text-white" href="#comunidad">Comunidad</a>
-        <a class="transition hover:text-white" href="#radio">Radio en vivo</a>
+        <details class="group relative">
+          <summary class="flex cursor-pointer list-none items-center gap-1 transition hover:text-white">Emisora de Radio <i data-lucide="chevron-down" class="h-3.5 w-3.5 transition group-open:rotate-180"></i></summary>
+          <div class="absolute left-0 top-full z-50 mt-3 grid min-w-48 gap-1 rounded-xl border border-line bg-panel p-2 shadow-xl">
+            <a class="rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white" href="#radio-listen">Escuchar emisora</a>
+            <a class="rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white" href="#radio-transmit">Panel de transmisión</a>
+          </div>
+        </details>
       </nav>
 
       <label class="relative ml-auto hidden w-full max-w-sm lg:block">
@@ -80,7 +86,14 @@
     </div>
     <nav id="mobileNav" class="hidden border-t border-line px-5 py-3 text-sm text-zinc-300 md:hidden" aria-label="Navegación móvil">
       <div class="flex flex-wrap gap-x-5 gap-y-3">
-        <a href="#originales">Originales</a><a href="#comunidad">Comunidad</a><a href="#radio">Radio en vivo</a>
+        <a href="#originales">Originales</a><a href="#comunidad">Comunidad</a>
+        <details class="basis-full">
+          <summary class="flex cursor-pointer list-none items-center gap-1">Emisora de Radio <i data-lucide="chevron-down" class="h-3.5 w-3.5"></i></summary>
+          <div class="mt-2 grid gap-2 border-l border-line pl-3">
+            <a href="#radio-listen">Escuchar emisora</a>
+            <a href="#radio-transmit">Panel de transmisión</a>
+          </div>
+        </details>
       </div>
       <label class="relative mt-3 block lg:hidden">
         <i data-lucide="search" class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"></i>
@@ -191,25 +204,25 @@
 
       <div id="videoGrid" class="mt-5 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
         <article class="community-card group cursor-pointer" data-category="música" data-search="sesión al amanecer música noa rivera">
-          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-rose-950 to-amber-700 text-left" aria-label="Reproducir Sesión al amanecer" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=700&q=80')">
+          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-rose-950 to-amber-700 text-left" data-video-src="https://media.w3.org/2010/05/sintel/trailer.mp4" aria-label="Reproducir Sesión al amanecer" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">08:42</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
           </button>
           <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-rose-900 text-[10px] font-bold">NR</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">Sesión al amanecer</h3><p class="mt-1 truncate text-xs text-zinc-500">Noa Rivera · 12 mil vistas</p></div></div>
         </article>
         <article class="community-card group cursor-pointer" data-category="viajes" data-search="caminos de sal viajes tomás león">
-          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-950 to-orange-700 text-left" aria-label="Reproducir Caminos de sal" style="background-image:linear-gradient(0deg,rgba(0,0,0,.4),transparent 60%),url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=700&q=80')">
+          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-950 to-orange-700 text-left" data-video-src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" aria-label="Reproducir Caminos de sal" style="background-image:linear-gradient(0deg,rgba(0,0,0,.4),transparent 60%),url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">12:06</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
           </button>
           <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sky-900 text-[10px] font-bold">TL</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">Caminos de sal</h3><p class="mt-1 truncate text-xs text-zinc-500">Tomás León · 8,4 mil vistas</p></div></div>
         </article>
         <article class="community-card group cursor-pointer" data-category="ideas" data-search="el color del silencio ideas taller sur">
-          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-violet-950 to-pink-800 text-left" aria-label="Reproducir El color del silencio" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=700&q=80')">
+          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-violet-950 to-pink-800 text-left" data-video-src="https://media.w3.org/2010/05/sintel/trailer.mp4" aria-label="Reproducir El color del silencio" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">06:18</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
           </button>
           <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violet-900 text-[10px] font-bold">TS</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">El color del silencio</h3><p class="mt-1 truncate text-xs text-zinc-500">Taller Sur · 5,1 mil vistas</p></div></div>
         </article>
         <article class="community-card group cursor-pointer" data-category="música" data-search="frecuencia de barrio música colectivo pulso">
-          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950 to-cyan-800 text-left" aria-label="Reproducir Frecuencia de barrio" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=700&q=80')">
+          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950 to-cyan-800 text-left" data-video-src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" aria-label="Reproducir Frecuencia de barrio" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=700&q=80')">
             <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">15:31</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
           </button>
           <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-900 text-[10px] font-bold">CP</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">Frecuencia de barrio</h3><p class="mt-1 truncate text-xs text-zinc-500">Colectivo Pulso · 3,8 mil vistas</p></div></div>
@@ -227,7 +240,7 @@
 
           <div class="relative mt-6 aspect-video overflow-hidden rounded-2xl border border-line bg-black">
             <video id="clipVideo" class="absolute inset-0 h-full w-full object-cover" controls playsinline preload="metadata">
-              <source src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+              <source src="https://media.w3.org/2010/05/sintel/trailer.mp4" type="video/mp4">
               Tu navegador no admite la reproducción de video.
             </video>
             <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"></div>
@@ -268,25 +281,52 @@
       </div>
     </section>
 
-    <section id="radio" aria-labelledby="radio-title">
-      <div class="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div class="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.22em] text-mint"><span class="h-1.5 w-1.5 animate-pulse rounded-full bg-mint"></span> En directo</div>
-          <h2 id="radio-title" class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Radio B2B</h2>
-          <p class="mt-2 text-sm text-zinc-400">Emisoras en vivo para acompañar cada momento.</p>
-        </div>
-        <a href="mailto:radio@omnistream.example" class="text-sm font-semibold text-zinc-400 transition hover:text-white">¿Tienes una emisora? <span class="text-ember">Conecta tu señal →</span></a>
+    <section id="radio" aria-labelledby="radio-title" class="scroll-mt-24">
+      <div class="mb-6">
+        <div class="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.22em] text-mint"><span class="h-1.5 w-1.5 rounded-full bg-mint"></span> Radio · solo audio</div>
+        <h2 id="radio-title" class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Emisora de Radio</h2>
+        <p class="mt-2 text-sm text-zinc-400">Escucha la señal de audio o prueba una transmisión local desde tu micrófono.</p>
       </div>
-      <div class="mt-6 grid gap-4 sm:grid-cols-3">
-        <button class="station-card flex items-center gap-4 rounded-2xl border border-mint/30 bg-mint/[.06] p-4 text-left transition hover:border-mint/50" data-station="Frecuencia Serena" data-description="Música tranquila · En vivo">
-          <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-900 to-teal-700 text-mint"><i data-lucide="waves" class="h-5 w-5"></i></span><span class="min-w-0"><span class="block truncate text-sm font-bold text-white">Frecuencia Serena</span><span class="mt-1 block text-xs text-zinc-500">Música tranquila · En vivo</span></span><span class="ml-auto h-2 w-2 shrink-0 rounded-full bg-mint"></span>
-        </button>
-        <button class="station-card flex items-center gap-4 rounded-2xl border border-line bg-panel p-4 text-left transition hover:border-mint/40" data-station="Pulso Nocturno" data-description="Electrónica suave · En vivo">
-          <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-950 to-fuchsia-900 text-fuchsia-300"><i data-lucide="radio" class="h-5 w-5"></i></span><span class="min-w-0"><span class="block truncate text-sm font-bold text-white">Pulso Nocturno</span><span class="mt-1 block text-xs text-zinc-500">Electrónica suave · En vivo</span></span><span class="ml-auto h-2 w-2 shrink-0 rounded-full bg-zinc-700"></span>
-        </button>
-        <button class="station-card flex items-center gap-4 rounded-2xl border border-line bg-panel p-4 text-left transition hover:border-mint/40" data-station="Voces Cercanas" data-description="Conversación y cultura · En vivo">
-          <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-orange-950 to-rose-900 text-orange-300"><i data-lucide="audio-lines" class="h-5 w-5"></i></span><span class="min-w-0"><span class="block truncate text-sm font-bold text-white">Voces Cercanas</span><span class="mt-1 block text-xs text-zinc-500">Conversación y cultura · En vivo</span></span><span class="ml-auto h-2 w-2 shrink-0 rounded-full bg-zinc-700"></span>
-        </button>
+      <div class="grid gap-5 lg:grid-cols-2">
+        <article id="radio-listen" class="scroll-mt-24 rounded-3xl border border-line bg-panel p-6 sm:p-8">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-widest text-zinc-500">Reproductor de audio</p>
+              <h3 class="mt-2 text-xl font-semibold text-white">Frecuencia Serena</h3>
+              <p class="mt-1 text-sm text-zinc-400">Señal de muestra · solo audio</p>
+            </div>
+            <span id="radioLiveBadge" class="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-ink px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400"><span class="h-2 w-2 rounded-full bg-zinc-600"></span><span>En pausa</span></span>
+          </div>
+          <audio id="radioAudio" class="mt-6 w-full" controls preload="none" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">
+            Tu navegador no admite la reproducción de audio.
+          </audio>
+          <p class="mt-3 text-xs leading-5 text-zinc-500">Audio de demostración; esta señal no es una emisora en vivo.</p>
+        </article>
+
+        <article id="radio-transmit" class="scroll-mt-24 rounded-3xl border border-mint/20 bg-gradient-to-br from-emerald-950/30 to-panel p-6 sm:p-8">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-widest text-mint">Estudio de emisión</p>
+              <h3 class="mt-2 text-xl font-semibold text-white">Panel de transmisión</h3>
+              <p class="mt-1 text-sm text-zinc-400">Prueba tu micrófono con una previsualización local.</p>
+            </div>
+            <span id="transmitStatusBadge" class="inline-flex shrink-0 items-center gap-2 rounded-full border border-zinc-700 bg-ink px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400" role="status"><span class="h-2 w-2 rounded-full bg-zinc-600"></span><span id="transmitStatus">En pausa</span></span>
+          </div>
+          <div class="mt-6 rounded-2xl border border-line bg-ink/70 p-4">
+            <p class="text-sm font-semibold text-white">Entrada de audio</p>
+            <p id="transmitMessage" class="mt-1 text-xs leading-5 text-zinc-400" aria-live="polite">Permite el acceso al micrófono para iniciar la prueba.</p>
+            <label class="mt-4 flex items-start gap-3 text-xs leading-5 text-zinc-300">
+              <input id="transmitMonitor" type="checkbox" class="mt-0.5 accent-emerald-400">
+              <span>Monitorizar el micrófono en este dispositivo (recomendamos auriculares).</span>
+            </label>
+            <div class="mt-5 flex flex-wrap gap-3">
+              <button id="startTransmission" type="button" class="inline-flex items-center gap-2 rounded-full bg-mint px-4 py-2.5 text-sm font-bold text-ink transition hover:bg-emerald-200"><i data-lucide="mic" class="h-4 w-4"></i> Iniciar prueba</button>
+              <button id="stopTransmission" type="button" class="hidden inline-flex items-center gap-2 rounded-full border border-rose-400/30 bg-rose-400/10 px-4 py-2.5 text-sm font-bold text-rose-200 transition hover:bg-rose-400/20"><i data-lucide="square" class="h-4 w-4"></i> Detener</button>
+            </div>
+            <audio id="transmitPreview" class="mt-4 hidden w-full" controls></audio>
+          </div>
+          <p class="mt-4 text-xs leading-5 text-amber-200/80">La previsualización solo se escucha en este navegador. Para emitir a otros oyentes hace falta conectar un servidor de streaming.</p>
+        </article>
       </div>
     </section>
   </main>
@@ -294,15 +334,27 @@
   <footer class="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/95 backdrop-blur-xl">
     <div class="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
       <div class="flex min-w-0 items-center gap-3">
-        <span class="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-900 to-teal-800 text-mint"><i data-lucide="radio" class="h-5 w-5"></i><span class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-ink bg-mint"></span></span>
-        <div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[9px] font-black uppercase tracking-widest text-mint">En vivo</span><span class="h-1 w-1 rounded-full bg-zinc-600"></span><span id="radioDescription" class="truncate text-[10px] text-zinc-500">Música tranquila</span></div><p id="radioStation" class="truncate text-sm font-bold text-white">Frecuencia Serena</p></div>
+      <span class="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-900 to-teal-800 text-mint"><i data-lucide="radio" class="h-5 w-5"></i><span id="radioFooterIndicator" class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-ink bg-zinc-600"></span></span>
+        <div class="min-w-0"><div class="flex items-center gap-2"><span id="radioStatus" class="text-[9px] font-black uppercase tracking-widest text-zinc-500">En pausa</span><span class="h-1 w-1 rounded-full bg-zinc-600"></span><span id="radioDescription" class="truncate text-[10px] text-zinc-500">Música tranquila</span></div><p id="radioStation" class="truncate text-sm font-bold text-white">Frecuencia Serena</p></div>
       </div>
       <div class="flex items-center gap-3 sm:gap-5">
-        <span class="hidden text-[10px] text-zinc-600 sm:block">Señal de demostración</span>
-        <button id="radioToggle" aria-label="Pausar radio" class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-ink transition hover:scale-105"><i data-lucide="pause" class="h-4 w-4 fill-current"></i></button>
+        <span class="hidden text-[10px] text-zinc-600 sm:block">Audio de muestra</span>
+        <button id="radioToggle" aria-label="Reproducir audio" class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-ink transition hover:scale-105"><i data-lucide="play" class="h-4 w-4 fill-current"></i></button>
       </div>
     </div>
   </footer>
+
+  <div id="mainPlayerModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="mainPlayerTitle">
+    <div class="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl">
+      <div class="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div class="min-w-0"><p class="text-[10px] font-bold uppercase tracking-widest text-mint">Video de muestra</p><h2 id="mainPlayerTitle" class="truncate text-base font-semibold text-white">Video</h2></div>
+        <button id="closeMainPlayer" type="button" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white" aria-label="Cerrar reproductor"><i data-lucide="x" class="h-4 w-4"></i></button>
+      </div>
+      <video id="mainPlayerVideo" class="block max-h-[75vh] w-full bg-black" controls playsinline preload="metadata">
+        Tu navegador no admite la reproducción de video.
+      </video>
+    </div>
+  </div>
 
   <div id="authModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="authTitle">
     <div class="relative w-full max-w-md rounded-3xl border border-line bg-panel p-6 shadow-2xl sm:p-8">
@@ -320,6 +372,9 @@
         <label class="block text-xs font-medium text-zinc-300">Contraseña
           <input id="authPassword" type="password" autocomplete="current-password" minlength="6" required class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="Al menos 6 caracteres">
         </label>
+        <label id="authConfirmPasswordField" class="hidden block text-xs font-medium text-zinc-300">Confirmar contraseña
+          <input id="authConfirmPassword" type="password" autocomplete="new-password" minlength="6" class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="Vuelve a escribir tu contraseña">
+        </label>
         <p id="authMessage" class="hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-200" role="alert"></p>
         <button id="authSubmit" type="submit" class="w-full rounded-full bg-ember px-4 py-3 text-sm font-bold text-ink transition hover:bg-orange-300">Iniciar sesión</button>
       </form>
@@ -330,7 +385,7 @@
           <path fill="#FBBC05" d="M10.53 28.59a14.4 14.4 0 0 1 0-9.18l-7.98-6.19a23.9 23.9 0 0 0 0 21.56l7.98-6.19Z"/>
           <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.87l-7.64-5.93c-2.13 1.43-4.86 2.28-8.26 2.28-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/>
         </svg>
-        Continuar con Google
+        <span id="googleSignInLabel">Continuar con Google</span>
       </button>
       <p class="mt-5 text-center text-sm text-zinc-400"><span id="authSwitchText">¿No tienes cuenta?</span>
         <button id="authModeToggle" type="button" class="ml-1 font-semibold text-ember hover:text-orange-300">Regístrate</button>
@@ -390,11 +445,53 @@
       filterVideos(searchInputs[0]?.value || '');
     }));
 
-    document.querySelectorAll('.video-launch').forEach(button => button.addEventListener('click', () => showToast('El reproductor de video estará disponible próximamente')));
+    const mainPlayerModal = document.getElementById('mainPlayerModal');
+    const mainPlayerVideo = document.getElementById('mainPlayerVideo');
+    function closeMainPlayer() {
+      mainPlayerVideo.pause();
+      mainPlayerVideo.removeAttribute('src');
+      mainPlayerVideo.load();
+      mainPlayerModal.classList.add('hidden');
+      mainPlayerModal.classList.remove('flex');
+    }
+    document.querySelectorAll('.video-launch').forEach(button => button.addEventListener('click', async () => {
+      const source = button.dataset.videoSrc;
+      if (!source) {
+        showToast('Este video todavía no tiene una fuente disponible.');
+        return;
+      }
+      const card = button.closest('.community-card');
+      document.getElementById('mainPlayerTitle').textContent =
+        card.querySelector('h3')?.textContent.trim() || 'Video';
+      mainPlayerVideo.src = source;
+      mainPlayerModal.classList.remove('hidden');
+      mainPlayerModal.classList.add('flex');
+      try {
+        await mainPlayerVideo.play();
+      } catch {
+        showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.');
+      }
+    }));
+    document.getElementById('closeMainPlayer').addEventListener('click', closeMainPlayer);
+    mainPlayerModal.addEventListener('click', event => {
+      if (event.target === mainPlayerModal) closeMainPlayer();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !mainPlayerModal.classList.contains('hidden')) closeMainPlayer();
+    });
+    mainPlayerVideo.addEventListener('error', () => showToast('No se pudo cargar este video. Comprueba tu conexión e inténtalo de nuevo.'));
+    mainPlayerVideo.addEventListener('play', () => document.getElementById('radioAudio').pause());
 
     const authModal = document.getElementById('authModal');
     const authForm = document.getElementById('authForm');
     const authMessage = document.getElementById('authMessage');
+    const authSubmit = document.getElementById('authSubmit');
+    const googleSignIn = document.getElementById('googleSignIn');
+    const googleSignInLabel = document.getElementById('googleSignInLabel');
+    const authModeToggle = document.getElementById('authModeToggle');
+    const authPassword = document.getElementById('authPassword');
+    const authConfirmPassword = document.getElementById('authConfirmPassword');
+    let authPending = false;
     function openAuthModal(mode = 'signin') {
       setAuthMode(mode);
       authModal.classList.remove('hidden');
@@ -410,13 +507,30 @@
       authMode = mode;
       const signingUp = mode === 'signup';
       document.getElementById('authTitle').textContent = signingUp ? 'Crear cuenta' : 'Iniciar sesión';
-      document.getElementById('authSubmit').textContent = signingUp ? 'Registrarse' : 'Iniciar sesión';
+      authSubmit.textContent = signingUp ? 'Registrarse' : 'Iniciar sesión';
       document.getElementById('authNameField').classList.toggle('hidden', !signingUp);
       document.getElementById('authName').required = signingUp;
       document.getElementById('authName').autocomplete = signingUp ? 'name' : 'off';
-      document.getElementById('authPassword').autocomplete = signingUp ? 'new-password' : 'current-password';
+      authPassword.autocomplete = signingUp ? 'new-password' : 'current-password';
+      document.getElementById('authConfirmPasswordField').classList.toggle('hidden', !signingUp);
+      authConfirmPassword.required = signingUp;
+      authConfirmPassword.value = '';
       document.getElementById('authSwitchText').textContent = signingUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
-      document.getElementById('authModeToggle').textContent = signingUp ? 'Inicia sesión' : 'Regístrate';
+      authModeToggle.textContent = signingUp ? 'Inicia sesión' : 'Regístrate';
+      authMessage.classList.add('hidden');
+    }
+    function setAuthPending(pending, method = null) {
+      authPending = pending;
+      authForm.setAttribute('aria-busy', String(pending));
+      authSubmit.disabled = pending;
+      googleSignIn.disabled = pending;
+      authModeToggle.disabled = pending;
+      authSubmit.textContent = pending && method === 'form'
+        ? 'Procesando…'
+        : authMode === 'signup' ? 'Registrarse' : 'Iniciar sesión';
+      googleSignInLabel.textContent = pending && method === 'google'
+        ? 'Conectando con Google…'
+        : 'Continuar con Google';
     }
     function showAuthMessage(message) {
       authMessage.textContent = message;
@@ -474,9 +588,10 @@
       }
       return true;
     }
-    function requireUser() {
+    function requireUser(message = 'Inicia sesión o regístrate para continuar.') {
       if (currentUser) return true;
       openAuthModal();
+      showAuthMessage(message);
       return false;
     }
 
@@ -494,31 +609,41 @@
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && !authModal.classList.contains('hidden')) closeAuthModal();
     });
-    document.getElementById('authModeToggle').addEventListener('click', () => setAuthMode(authMode === 'signin' ? 'signup' : 'signin'));
-    document.getElementById('googleSignIn').addEventListener('click', async event => {
-      if (!ensureSupabase()) return;
-      const button = event.currentTarget;
-      button.disabled = true;
+    authModeToggle.addEventListener('click', () => {
+      if (!authPending) setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+    });
+    googleSignIn.addEventListener('click', async () => {
+      if (authPending || !ensureSupabase()) return;
+      setAuthPending(true, 'google');
       authMessage.classList.add('hidden');
       try {
-        const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+        const { data, error } = await supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: `${window.location.origin}${window.location.pathname}` }
+        });
         if (error) throw error;
+        if (!data.url) throw new Error('No se pudo iniciar la redirección a Google.');
       } catch (error) {
         showAuthMessage(error.message || 'No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
       } finally {
-        button.disabled = false;
+        setAuthPending(false);
       }
     });
     authForm.addEventListener('submit', async event => {
       event.preventDefault();
-      if (!ensureSupabase()) return;
-      const submitButton = document.getElementById('authSubmit');
-      submitButton.disabled = true;
+      if (authPending || !ensureSupabase()) return;
       authMessage.classList.add('hidden');
+      const mode = authMode;
+      const email = document.getElementById('authEmail').value.trim();
+      const password = authPassword.value;
+      if (mode === 'signup' && password !== authConfirmPassword.value) {
+        showAuthMessage('Las contraseñas no coinciden.');
+        authConfirmPassword.focus();
+        return;
+      }
+      setAuthPending(true, 'form');
       try {
-        const email = document.getElementById('authEmail').value.trim();
-        const password = document.getElementById('authPassword').value;
-        const result = authMode === 'signup'
+        const result = mode === 'signup'
           ? await supabaseClient.auth.signUp({
             email,
             password,
@@ -526,17 +651,20 @@
           })
           : await supabaseClient.auth.signInWithPassword({ email, password });
         if (result.error) throw result.error;
-        if (authMode === 'signup' && !result.data.session) {
+        if (mode === 'signin' && !result.data.session) {
+          throw new Error('No se pudo iniciar la sesión. Inténtalo de nuevo.');
+        }
+        if (mode === 'signup' && !result.data.session) {
           closeAuthModal();
           showToast('Revisa tu correo para confirmar la cuenta.');
         } else {
           closeAuthModal();
-          showToast(authMode === 'signup' ? 'Cuenta creada.' : 'Sesión iniciada.');
+          showToast(mode === 'signup' ? 'Cuenta creada.' : 'Sesión iniciada.');
         }
       } catch (error) {
         showAuthMessage(error.message || 'No se pudo autenticar. Inténtalo de nuevo.');
       } finally {
-        submitButton.disabled = false;
+        setAuthPending(false);
       }
     });
     document.getElementById('signOutButton').addEventListener('click', async () => {
@@ -546,11 +674,21 @@
       if (error) showToast(`No se pudo cerrar sesión: ${error.message}`);
     });
     if (supabaseClient) {
-      supabaseClient.auth.onAuthStateChange((_event, session) => renderProfile(session?.user || null));
-      supabaseClient.auth.getSession().then(({ data, error }) => {
-        if (error) showToast(`No se pudo restaurar la sesión: ${error.message}`);
-        renderProfile(data.session?.user || null);
+      let receivedAuthState = false;
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        receivedAuthState = true;
+        renderProfile(session?.user || null);
+        if (event === 'SIGNED_IN' && session?.user) closeAuthModal();
       });
+      supabaseClient.auth.getSession()
+        .then(({ data, error }) => {
+          if (error) {
+            showToast(`No se pudo restaurar la sesión: ${error.message}`);
+          } else if (!receivedAuthState) {
+            renderProfile(data.session?.user || null);
+          }
+        })
+        .catch(error => showToast(`No se pudo restaurar la sesión: ${error.message || 'Inténtalo de nuevo.'}`));
     }
 
     const uploadVideoInput = document.getElementById('uploadVideoInput');
@@ -737,27 +875,127 @@
       }
     });
 
-    document.querySelectorAll('.station-card').forEach(card => card.addEventListener('click', () => {
-      document.querySelectorAll('.station-card').forEach(station => {
-        station.classList.remove('border-mint/30', 'bg-mint/[.06]');
-        station.classList.add('border-line', 'bg-panel');
-        station.querySelector('span:last-child').classList.replace('bg-mint', 'bg-zinc-700');
-      });
-      card.classList.remove('border-line', 'bg-panel');
-      card.classList.add('border-mint/30', 'bg-mint/[.06]');
-      card.querySelector('span:last-child').classList.replace('bg-zinc-700', 'bg-mint');
-      document.getElementById('radioStation').textContent = card.dataset.station;
-      document.getElementById('radioDescription').textContent = card.dataset.description.split(' · ')[0];
-      showToast(`Sintonizando ${card.dataset.station}`);
-    }));
-
-    let radioPlaying = true;
-    document.getElementById('radioToggle').addEventListener('click', event => {
-      radioPlaying = !radioPlaying;
-      event.currentTarget.innerHTML = `<i data-lucide="${radioPlaying ? 'pause' : 'play'}" class="h-4 w-4${radioPlaying ? ' fill-current' : ''}"></i>`;
-      event.currentTarget.setAttribute('aria-label', radioPlaying ? 'Pausar radio' : 'Reproducir radio');
+    const radioAudio = document.getElementById('radioAudio');
+    const radioToggle = document.getElementById('radioToggle');
+    const radioStatus = document.getElementById('radioStatus');
+    const radioLiveBadge = document.getElementById('radioLiveBadge');
+    function updateRadioControls() {
+      const playing = !radioAudio.paused && !radioAudio.ended;
+      radioStatus.textContent = playing ? 'Muestra' : 'En pausa';
+      radioStatus.classList.toggle('text-mint', playing);
+      radioStatus.classList.toggle('text-zinc-500', !playing);
+      radioLiveBadge.classList.toggle('border-mint/30', playing);
+      radioLiveBadge.classList.toggle('bg-mint/10', playing);
+      radioLiveBadge.classList.toggle('text-mint', playing);
+      radioLiveBadge.classList.toggle('border-zinc-700', !playing);
+      radioLiveBadge.classList.toggle('bg-ink', !playing);
+      radioLiveBadge.classList.toggle('text-zinc-400', !playing);
+      radioLiveBadge.querySelector('span:last-child').textContent = playing ? 'Muestra en reproducción' : 'En pausa';
+      radioLiveBadge.querySelector('span:first-child').classList.toggle('bg-mint', playing);
+      radioLiveBadge.querySelector('span:first-child').classList.toggle('bg-zinc-600', !playing);
+      document.getElementById('radioFooterIndicator').classList.toggle('bg-mint', playing);
+      document.getElementById('radioFooterIndicator').classList.toggle('bg-zinc-600', !playing);
+      radioToggle.setAttribute('aria-label', playing ? 'Pausar audio' : 'Reproducir audio');
+      radioToggle.innerHTML = `<i data-lucide="${playing ? 'pause' : 'play'}" class="h-4 w-4 fill-current"></i>`;
       lucide.createIcons();
-      showToast(radioPlaying ? 'Radio en reproducción' : 'Radio en pausa');
+    }
+    radioAudio.addEventListener('play', updateRadioControls);
+    radioAudio.addEventListener('pause', updateRadioControls);
+    radioAudio.addEventListener('ended', updateRadioControls);
+    radioAudio.addEventListener('error', () => showToast('No se pudo cargar el audio de muestra. Comprueba tu conexión.'));
+    radioToggle.addEventListener('click', async () => {
+      if (!radioAudio.paused) {
+        radioAudio.pause();
+        return;
+      }
+      mainPlayerVideo.pause();
+      try {
+        await radioAudio.play();
+      } catch {
+        showToast('No se pudo iniciar el audio. Inténtalo de nuevo.');
+      }
+    });
+    updateRadioControls();
+
+    let localTransmissionStream = null;
+    const transmitPreview = document.getElementById('transmitPreview');
+    const transmitMonitor = document.getElementById('transmitMonitor');
+    const transmitStatus = document.getElementById('transmitStatus');
+    const transmitStatusBadge = document.getElementById('transmitStatusBadge');
+    const transmitMessage = document.getElementById('transmitMessage');
+    const startTransmission = document.getElementById('startTransmission');
+    const stopTransmission = document.getElementById('stopTransmission');
+    function stopLocalTransmission(message = 'La prueba local se detuvo. No se envió audio a otros oyentes.') {
+      const stream = localTransmissionStream;
+      localTransmissionStream = null;
+      stream?.getTracks().forEach(track => track.stop());
+      transmitPreview.pause();
+      transmitPreview.srcObject = null;
+      transmitPreview.classList.add('hidden');
+      startTransmission.classList.remove('hidden');
+      stopTransmission.classList.add('hidden');
+      transmitStatus.textContent = 'En pausa';
+      transmitStatusBadge.classList.remove('border-rose-400/30', 'bg-rose-400/10', 'text-rose-200');
+      transmitStatusBadge.classList.add('border-zinc-700', 'bg-ink', 'text-zinc-400');
+      transmitStatusBadge.querySelector('span:first-child').classList.remove('animate-pulse', 'bg-rose-400');
+      transmitStatusBadge.querySelector('span:first-child').classList.add('bg-zinc-600');
+      transmitMessage.textContent = message;
+    }
+    startTransmission.addEventListener('click', async () => {
+      if (localTransmissionStream) return;
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        transmitMessage.textContent = 'El acceso al micrófono requiere HTTPS (o localhost) y un navegador compatible.';
+        showToast('No se puede acceder al micrófono en este contexto.');
+        return;
+      }
+      startTransmission.disabled = true;
+      transmitMessage.textContent = 'Solicitando permiso para usar el micrófono…';
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        localTransmissionStream = stream;
+        transmitPreview.srcObject = stream;
+        transmitPreview.muted = !transmitMonitor.checked;
+        transmitPreview.classList.toggle('hidden', !transmitMonitor.checked);
+        if (transmitMonitor.checked) await transmitPreview.play();
+        stream.getAudioTracks().forEach(track => track.addEventListener('ended', () => {
+          if (localTransmissionStream === stream) {
+            stopLocalTransmission('El micrófono se desconectó. Puedes volver a iniciar la prueba local.');
+          }
+        }, { once: true }));
+        startTransmission.classList.add('hidden');
+        stopTransmission.classList.remove('hidden');
+        transmitStatus.textContent = 'Prueba local activa';
+        transmitStatusBadge.classList.remove('border-zinc-700', 'bg-ink', 'text-zinc-400');
+        transmitStatusBadge.classList.add('border-rose-400/30', 'bg-rose-400/10', 'text-rose-200');
+        transmitStatusBadge.querySelector('span:first-child').classList.remove('bg-zinc-600');
+        transmitStatusBadge.querySelector('span:first-child').classList.add('animate-pulse', 'bg-rose-400');
+        transmitMessage.textContent = 'Micrófono activo en este navegador. No se transmite a otros oyentes.';
+        radioAudio.pause();
+      } catch (error) {
+        stopLocalTransmission(error.name === 'NotAllowedError'
+          ? 'No se concedió permiso para usar el micrófono. Revisa los permisos del navegador.'
+          : `No se pudo iniciar la prueba local: ${error.message || 'comprueba el micrófono e inténtalo de nuevo.'}`);
+      } finally {
+        startTransmission.disabled = false;
+      }
+    });
+    stopTransmission.addEventListener('click', () => stopLocalTransmission());
+    transmitMonitor.addEventListener('change', async () => {
+      if (!localTransmissionStream) return;
+      transmitPreview.muted = !transmitMonitor.checked;
+      transmitPreview.classList.toggle('hidden', !transmitMonitor.checked);
+      if (transmitMonitor.checked) {
+        try {
+          await transmitPreview.play();
+        } catch (error) {
+          transmitMonitor.checked = false;
+          transmitPreview.muted = true;
+          transmitPreview.classList.add('hidden');
+          showToast(`No se pudo monitorizar el micrófono: ${error.message || 'inténtalo de nuevo.'}`);
+        }
+      } else {
+        transmitPreview.pause();
+      }
     });
 
     function showToast(message) {
@@ -902,6 +1140,7 @@
         if (!button) return;
         const action = button.dataset.socialAction;
         const commentRow = button.closest('[data-comment-id]');
+        if (action === 'like' && !requireUser('Inicia sesión o regístrate para dar Me gusta.')) return;
         if (action === 'share') {
           const url = new URL(window.location.href);
           url.hash = id;
@@ -961,6 +1200,7 @@
           return;
         }
         if (action === 'comment-like') {
+          if (!requireUser('Inicia sesión o regístrate para dar Me gusta a un comentario.')) return;
           const comment = findComment(state.comments, commentRow.dataset.commentId);
           if (!comment) return;
           comment.liked = !comment.liked;
@@ -973,6 +1213,7 @@
         const form = event.target.closest('form[data-social-comment-form]');
         if (!form) return;
         event.preventDefault();
+        if (!requireUser('Inicia sesión o regístrate para publicar un comentario o una respuesta.')) return;
         const input = form.querySelector('[name="comment"]');
         const text = input.value.trim();
         if (!text) return;
