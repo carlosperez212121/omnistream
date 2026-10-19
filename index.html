@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0c0f">
+  <meta name="description" content="Historias originales, videos de la comunidad y radio en vivo. Todo en un mismo lugar.">
+  <title>OmniStream — historias que nos conectan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            ink: '#0b0c0f',
+            panel: '#13151a',
+            line: '#252830',
+            ember: '#ff7759',
+            gold: '#f5c66b',
+            mint: '#70dfc0'
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { background-image: radial-gradient(ellipse at 50% -20%, rgba(255,119,89,.09), transparent 38%); }
+    .poster { background-size: cover; background-position: center; }
+    .range-track { accent-color: #ff7759; }
+    ::selection { background: rgba(255,119,89,.35); }
+  </style>
+</head>
+<body class="min-h-screen bg-ink text-zinc-100 antialiased">
+  <header class="sticky top-0 z-40 border-b border-line/80 bg-ink/90 backdrop-blur-xl">
+    <div class="mx-auto flex h-[72px] max-w-[1440px] items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-10">
+      <a href="#inicio" class="flex shrink-0 items-center gap-3" aria-label="OmniStream, inicio">
+        <span class="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-ember to-amber-300 text-lg font-black text-ink shadow-lg shadow-ember/15">O</span>
+        <span class="text-lg font-extrabold tracking-tight">omni<span class="text-ember">stream</span></span>
+      </a>
+
+      <nav class="hidden items-center gap-6 pl-6 text-sm font-medium text-zinc-400 md:flex" aria-label="Navegación principal">
+        <a class="transition hover:text-white" href="#originales">Originales</a>
+        <a class="transition hover:text-white" href="#comunidad">Comunidad</a>
+        <a class="transition hover:text-white" href="#radio">Radio en vivo</a>
+      </nav>
+
+      <label class="relative ml-auto hidden w-full max-w-sm lg:block">
+        <i data-lucide="search" class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"></i>
+        <input id="searchInput" type="search" placeholder="Buscar videos o canales..." aria-label="Buscar videos o canales"
+          class="w-full rounded-full border border-line bg-panel py-2.5 pl-10 pr-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-ember/60 focus:ring-2 focus:ring-ember/10">
+      </label>
+
+      <button class="ml-auto inline-flex items-center gap-2 rounded-full border border-gold/25 bg-gold/10 p-2.5 text-xs font-bold text-gold transition hover:bg-gold/15 sm:px-4 sm:py-2 sm:text-sm lg:ml-0" aria-label="Plan VIP">
+        <i data-lucide="sparkles" class="h-4 w-4"></i><span class="hidden sm:inline">Plan VIP</span>
+      </button>
+      <button id="authButton" type="button" class="inline-flex shrink-0 items-center gap-2 rounded-full border border-line bg-panel px-3 py-2 text-xs font-semibold text-white transition hover:border-ember/50 sm:px-4 sm:text-sm" aria-label="Iniciar sesión o registrarse">
+        <i data-lucide="user-round" class="h-4 w-4"></i><span id="authButtonLabel" class="hidden sm:inline">Iniciar sesión</span>
+      </button>
+      <div id="profileMenu" class="absolute right-4 top-[64px] z-50 hidden min-w-56 rounded-2xl border border-line bg-panel p-3 shadow-xl sm:right-10">
+        <p id="profileEmail" class="truncate px-2 py-1 text-xs text-zinc-400"></p>
+        <button id="signOutButton" type="button" class="mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-sm text-white transition hover:bg-white/5"><i data-lucide="log-out" class="h-4 w-4"></i>Cerrar sesión</button>
+      </div>
+      <button aria-label="Abrir menú" class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-zinc-300 md:hidden" onclick="document.getElementById('mobileNav').classList.toggle('hidden')">
+        <i data-lucide="menu" class="h-5 w-5"></i>
+      </button>
+    </div>
+    <nav id="mobileNav" class="hidden border-t border-line px-5 py-3 text-sm text-zinc-300 md:hidden" aria-label="Navegación móvil">
+      <div class="flex flex-wrap gap-x-5 gap-y-3">
+        <a href="#originales">Originales</a><a href="#comunidad">Comunidad</a><a href="#radio">Radio en vivo</a>
+      </div>
+      <label class="relative mt-3 block lg:hidden">
+        <i data-lucide="search" class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"></i>
+        <input id="mobileSearch" type="search" placeholder="Buscar videos o canales..." aria-label="Buscar videos o canales"
+          class="w-full rounded-full border border-line bg-panel py-2.5 pl-10 pr-4 text-sm outline-none placeholder:text-zinc-500 focus:border-ember/60">
+      </label>
+    </nav>
+  </header>
+
+  <main id="inicio" class="mx-auto max-w-[1440px] space-y-20 px-4 pb-32 pt-8 sm:px-6 sm:pt-10 lg:space-y-24 lg:px-10">
+    <section id="originales" aria-labelledby="originales-title">
+      <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div class="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.22em] text-gold">
+            <span class="h-1.5 w-1.5 rounded-full bg-gold"></span> Estrenos VIP
+          </div>
+          <h1 id="originales-title" class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Omni Originals</h1>
+          <p class="mt-2 max-w-xl text-sm leading-6 text-zinc-400 sm:text-base">Historias originales, elegidas para quedarse contigo. Descubre películas, series y nuevas voces.</p>
+        </div>
+        <a href="#alianzas" class="inline-flex items-center gap-2 rounded-full border border-line bg-panel px-4 py-2.5 text-sm font-semibold text-zinc-200 transition hover:border-ember/50 hover:text-white">
+          <i data-lucide="clapperboard" class="h-4 w-4 text-ember"></i> Asóciate como Creador/Productor VIP
+        </a>
+      </div>
+
+      <article class="relative isolate overflow-hidden rounded-[28px] border border-white/[.08] bg-[#181719]">
+        <div class="absolute inset-0 -z-10 bg-[url('https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1800&q=85')] bg-cover bg-center opacity-45"></div>
+        <div class="absolute inset-0 -z-10 bg-gradient-to-r from-ink via-ink/80 to-ink/10"></div>
+        <div class="absolute inset-0 -z-10 bg-gradient-to-t from-ink/80 via-transparent to-transparent"></div>
+        <div class="grid min-h-[420px] items-end gap-8 p-6 sm:min-h-[480px] sm:p-10 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:p-14">
+          <div class="max-w-xl">
+            <div class="mb-5 flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[.16em] text-ink">Exclusivo VIP</span>
+              <span class="rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/80">Película · 2025</span>
+            </div>
+            <h2 class="max-w-lg text-4xl font-semibold leading-[1.04] tracking-tight text-white sm:text-6xl">Donde termina<br class="hidden sm:block"> la marea</h2>
+            <p class="mt-5 max-w-md text-sm leading-6 text-zinc-200 sm:text-base">En una costa que cambia cada noche, una cartógrafa busca el último lugar que todavía puede llamar hogar.</p>
+            <div class="mt-6 flex flex-wrap items-center gap-3">
+              <button class="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-ink transition hover:bg-zinc-200" onclick="showToast('Preparando el estreno para reproducir')">
+                <i data-lucide="play" class="h-4 w-4 fill-current"></i> Ver estreno
+              </button>
+              <button class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/25 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10" onclick="showToast('Añadido a tu lista')">
+                <i data-lucide="plus" class="h-4 w-4"></i> Mi lista
+              </button>
+            </div>
+          </div>
+          <div class="hidden justify-self-end lg:block">
+            <div class="w-56 rotate-2 overflow-hidden rounded-2xl border border-white/20 shadow-2xl shadow-black/60">
+              <img class="h-80 w-full object-cover" src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=600&q=85" alt="Olas rompiendo en una costa al atardecer">
+              <div class="bg-[#171719] p-4"><p class="text-xs font-bold uppercase tracking-widest text-gold">Una producción original</p><p class="mt-1 text-sm font-semibold text-white">Donde termina la marea</p></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <div class="mt-7 flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-white">Más para descubrir</h3>
+        <a href="#comunidad" class="text-sm font-semibold text-ember hover:text-orange-300">Ver catálogo <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+        <article class="group min-w-0">
+          <div class="poster relative aspect-[1.5] overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-950 via-violet-900 to-rose-950" style="background-image:linear-gradient(135deg,rgba(35,32,78,.25),rgba(11,12,15,.2)),url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=700&q=80')">
+            <span class="absolute left-3 top-3 rounded-full bg-gold px-2 py-1 text-[9px] font-black uppercase tracking-wider text-ink">VIP</span>
+            <span class="absolute bottom-3 left-3 rounded-full bg-black/50 px-2 py-1 text-[10px] font-medium text-white">Serie · 6 episodios</span>
+          </div>
+          <h4 class="mt-3 truncate text-sm font-semibold text-white">La distancia azul</h4><p class="mt-1 text-xs text-zinc-500">Drama · Nuevos episodios</p>
+        </article>
+        <article class="group min-w-0">
+          <div class="poster relative aspect-[1.5] overflow-hidden rounded-2xl bg-gradient-to-br from-orange-950 to-amber-700" style="background-image:linear-gradient(135deg,rgba(72,27,8,.25),rgba(11,12,15,.2)),url('https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=700&q=80')">
+            <span class="absolute left-3 top-3 rounded-full bg-gold px-2 py-1 text-[9px] font-black uppercase tracking-wider text-ink">VIP</span>
+            <span class="absolute bottom-3 left-3 rounded-full bg-black/50 px-2 py-1 text-[10px] font-medium text-white">Documental · 48 min</span>
+          </div>
+          <h4 class="mt-3 truncate text-sm font-semibold text-white">Luz de invierno</h4><p class="mt-1 text-xs text-zinc-500">Naturaleza · 4K</p>
+        </article>
+        <article class="group min-w-0">
+          <div class="poster relative aspect-[1.5] overflow-hidden rounded-2xl bg-gradient-to-br from-teal-950 to-sky-800" style="background-image:linear-gradient(135deg,rgba(6,54,66,.25),rgba(11,12,15,.2)),url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=700&q=80')">
+            <span class="absolute left-3 top-3 rounded-full bg-gold px-2 py-1 text-[9px] font-black uppercase tracking-wider text-ink">VIP</span>
+            <span class="absolute bottom-3 left-3 rounded-full bg-black/50 px-2 py-1 text-[10px] font-medium text-white">Película · 1 h 52 min</span>
+          </div>
+          <h4 class="mt-3 truncate text-sm font-semibold text-white">Sal y horizonte</h4><p class="mt-1 text-xs text-zinc-500">Aventura · Estreno reciente</p>
+        </article>
+        <a id="alianzas" href="mailto:alianzas@omnistream.example" class="flex min-h-[170px] flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-panel/60 p-5 text-center transition hover:border-ember/50">
+          <span class="grid h-10 w-10 place-items-center rounded-full bg-ember/10 text-ember"><i data-lucide="plus" class="h-5 w-5"></i></span>
+          <span class="mt-3 text-sm font-semibold text-white">Tu historia puede vivir aquí</span>
+          <span class="mt-1 text-xs text-zinc-500">Conoce las alianzas VIP</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="comunidad" aria-labelledby="community-title">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div class="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.22em] text-mint"><span class="h-1.5 w-1.5 rounded-full bg-mint"></span> De la comunidad, para todos</div>
+          <h2 id="community-title" class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Creator Hub</h2>
+          <p class="mt-2 text-sm text-zinc-400 sm:text-base">Ideas frescas, talento independiente y videos de acceso libre.</p>
+        </div>
+        <button id="uploadVideoButton" type="button" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-bold text-ink transition hover:bg-zinc-200">
+          <i data-lucide="upload" class="h-4 w-4"></i> Publicar video
+        </button>
+        <input id="uploadVideoInput" class="hidden" type="file" accept="video/mp4,video/webm,video/quicktime">
+      </div>
+      <div class="mt-6 flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar videos">
+        <button class="filter-chip rounded-full bg-white px-4 py-2 text-xs font-bold text-ink" data-filter="all">Para ti</button>
+        <button class="filter-chip rounded-full border border-line bg-panel px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white" data-filter="música">Música</button>
+        <button class="filter-chip rounded-full border border-line bg-panel px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white" data-filter="viajes">Viajes</button>
+        <button class="filter-chip rounded-full border border-line bg-panel px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white" data-filter="ideas">Ideas</button>
+        <span class="ml-auto hidden items-center gap-2 text-xs text-zinc-500 sm:flex"><i data-lucide="globe-2" class="h-3.5 w-3.5"></i> Acceso libre</span>
+      </div>
+
+      <div id="videoGrid" class="mt-5 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
+        <article class="community-card group" data-category="música" data-search="sesión al amanecer música noa rivera">
+          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-rose-950 to-amber-700 text-left" aria-label="Reproducir Sesión al amanecer" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=700&q=80')">
+            <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">08:42</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
+          </button>
+          <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-rose-900 text-[10px] font-bold">NR</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">Sesión al amanecer</h3><p class="mt-1 truncate text-xs text-zinc-500">Noa Rivera · 12 mil vistas</p></div></div>
+        </article>
+        <article class="community-card group" data-category="viajes" data-search="caminos de sal viajes tomás león">
+          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-950 to-orange-700 text-left" aria-label="Reproducir Caminos de sal" style="background-image:linear-gradient(0deg,rgba(0,0,0,.4),transparent 60%),url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=700&q=80')">
+            <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">12:06</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
+          </button>
+          <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sky-900 text-[10px] font-bold">TL</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">Caminos de sal</h3><p class="mt-1 truncate text-xs text-zinc-500">Tomás León · 8,4 mil vistas</p></div></div>
+        </article>
+        <article class="community-card group" data-category="ideas" data-search="el color del silencio ideas taller sur">
+          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-violet-950 to-pink-800 text-left" aria-label="Reproducir El color del silencio" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=700&q=80')">
+            <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">06:18</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
+          </button>
+          <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violet-900 text-[10px] font-bold">TS</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">El color del silencio</h3><p class="mt-1 truncate text-xs text-zinc-500">Taller Sur · 5,1 mil vistas</p></div></div>
+        </article>
+        <article class="community-card group" data-category="música" data-search="frecuencia de barrio música colectivo pulso">
+          <button class="video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950 to-cyan-800 text-left" aria-label="Reproducir Frecuencia de barrio" style="background-image:linear-gradient(0deg,rgba(0,0,0,.45),transparent 60%),url('https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=700&q=80')">
+            <span class="absolute bottom-3 right-3 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold">15:31</span><span class="play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100"><i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i></span>
+          </button>
+          <div class="mt-3 flex gap-2.5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-900 text-[10px] font-bold">CP</span><div class="min-w-0"><h3 class="truncate text-sm font-semibold text-white">Frecuencia de barrio</h3><p class="mt-1 truncate text-xs text-zinc-500">Colectivo Pulso · 3,8 mil vistas</p></div></div>
+        </article>
+      </div>
+      <p id="emptyResults" class="mt-8 hidden rounded-2xl border border-line bg-panel p-6 text-center text-sm text-zinc-400">No encontramos videos o canales con esa búsqueda.</p>
+    </section>
+
+    <section id="clipper" aria-labelledby="clipper-title" class="overflow-hidden rounded-[28px] border border-ember/20 bg-gradient-to-br from-[#1c1518] via-panel to-panel">
+      <div class="grid lg:grid-cols-[1fr_.9fr]">
+        <div class="p-6 sm:p-9 lg:p-11">
+          <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-ember/20 bg-ember/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-ember"><i data-lucide="scissors" class="h-3.5 w-3.5"></i> Herramienta para creadores</div>
+          <h2 id="clipper-title" class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Clipper Studio <span class="text-ember">9:16</span></h2>
+          <p class="mt-3 max-w-lg text-sm leading-6 text-zinc-400">Guarda el momento que te encantó. Ajusta el fragmento, prepara el formato vertical y compártelo con la comunidad.</p>
+
+          <div class="relative mt-6 aspect-video overflow-hidden rounded-2xl border border-line bg-black">
+            <video id="clipVideo" class="absolute inset-0 h-full w-full object-cover" controls playsinline preload="metadata" poster="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1000&q=85">
+              <source src="https://media.w3.org/2010/05/sintel/trailer.mp4" type="video/mp4">
+              Tu navegador no admite la reproducción de video.
+            </video>
+            <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"></div>
+            <button id="playerToggle" aria-label="Reproducir video" class="absolute left-1/2 top-1/2 z-10 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow-lg transition hover:scale-105"><i data-lucide="play" class="ml-0.5 h-5 w-5 fill-current"></i></button>
+            <div class="pointer-events-none absolute inset-x-4 top-4 z-10 flex items-end justify-between gap-3 sm:inset-x-5 sm:top-5">
+              <div><p class="text-[10px] font-semibold uppercase tracking-widest text-white/70">Reproductor · documental</p><p class="mt-1 text-sm font-bold text-white">Luz de invierno</p></div>
+              <span id="clipTime" class="font-mono text-[10px] text-white/90">00:00 / --:--</span>
+            </div>
+          </div>
+
+          <div class="mt-7 rounded-2xl border border-line bg-ink/70 p-4 sm:p-5">
+            <div class="flex items-center justify-between gap-3"><label for="clipRange" class="text-xs font-semibold text-white">Selecciona el momento</label><span id="clipDuration" class="rounded-full bg-ember/10 px-2.5 py-1 text-[10px] font-bold text-ember">20 segundos</span></div>
+            <input id="clipRange" class="range-track mt-5 h-1.5 w-full cursor-pointer" type="range" min="0" max="0" step="0.1" value="0" aria-label="Punto de inicio del clip">
+            <div class="mt-2 flex justify-between font-mono text-[10px] text-zinc-500"><span>00:00</span><span id="clipStart">00:00</span><span id="clipEnd">00:20</span><span id="clipTotal">--:--</span></div>
+            <label for="clipCaption" class="sr-only">Texto para acompañar el clip</label>
+            <input id="clipCaption" type="text" maxlength="120" value="Un instante que merece volver a verse ✨" class="mt-5 w-full rounded-xl border border-line bg-panel px-3.5 py-3 text-xs text-zinc-200 outline-none placeholder:text-zinc-500 focus:border-ember/50">
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <span class="inline-flex items-center gap-1.5 text-[11px] text-zinc-500"><i data-lucide="shield-check" class="h-3.5 w-3.5 text-mint"></i> Listo para compartir</span>
+              <button id="shareClip" type="button" class="inline-flex items-center gap-2 rounded-full bg-ember px-4 py-2.5 text-xs font-bold text-ink transition hover:bg-orange-300"><i data-lucide="scissors" class="h-3.5 w-3.5"></i> Crear y guardar clip</button>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center justify-center bg-[radial-gradient(ellipse_at_center,rgba(255,119,89,.13),transparent_65%)] p-6 lg:p-10">
+          <div class="relative aspect-[9/16] w-44 overflow-hidden rounded-[28px] border-[5px] border-zinc-700 bg-gradient-to-br from-slate-800 via-indigo-950 to-rose-950 shadow-2xl sm:w-52">
+            <img src="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=600&q=85" class="absolute inset-0 h-full w-full object-cover opacity-75" alt="Vista previa del clip vertical">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20"></div>
+            <div class="absolute left-3 top-3 rounded-full bg-black/45 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-white">Vista previa · 9:16</div>
+            <div class="absolute inset-x-3 bottom-4"><div class="mb-2 h-1 w-8 rounded-full bg-ember"></div><p id="captionPreview" class="line-clamp-3 text-xs font-semibold leading-4 text-white">Un instante que merece volver a verse ✨</p><p class="mt-2 text-[9px] font-medium text-white/70">Tu canal · ahora</p></div>
+            <span class="absolute bottom-4 right-3 grid h-7 w-7 place-items-center rounded-full bg-white/15 text-white"><i data-lucide="heart" class="h-3.5 w-3.5"></i></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="radio" aria-labelledby="radio-title">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div class="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.22em] text-mint"><span class="h-1.5 w-1.5 animate-pulse rounded-full bg-mint"></span> En directo</div>
+          <h2 id="radio-title" class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Radio B2B</h2>
+          <p class="mt-2 text-sm text-zinc-400">Emisoras en vivo para acompañar cada momento.</p>
+        </div>
+        <a href="mailto:radio@omnistream.example" class="text-sm font-semibold text-zinc-400 transition hover:text-white">¿Tienes una emisora? <span class="text-ember">Conecta tu señal →</span></a>
+      </div>
+      <div class="mt-6 grid gap-4 sm:grid-cols-3">
+        <button class="station-card flex items-center gap-4 rounded-2xl border border-mint/30 bg-mint/[.06] p-4 text-left transition hover:border-mint/50" data-station="Frecuencia Serena" data-description="Música tranquila · En vivo">
+          <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-900 to-teal-700 text-mint"><i data-lucide="waves" class="h-5 w-5"></i></span><span class="min-w-0"><span class="block truncate text-sm font-bold text-white">Frecuencia Serena</span><span class="mt-1 block text-xs text-zinc-500">Música tranquila · En vivo</span></span><span class="ml-auto h-2 w-2 shrink-0 rounded-full bg-mint"></span>
+        </button>
+        <button class="station-card flex items-center gap-4 rounded-2xl border border-line bg-panel p-4 text-left transition hover:border-mint/40" data-station="Pulso Nocturno" data-description="Electrónica suave · En vivo">
+          <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-950 to-fuchsia-900 text-fuchsia-300"><i data-lucide="radio" class="h-5 w-5"></i></span><span class="min-w-0"><span class="block truncate text-sm font-bold text-white">Pulso Nocturno</span><span class="mt-1 block text-xs text-zinc-500">Electrónica suave · En vivo</span></span><span class="ml-auto h-2 w-2 shrink-0 rounded-full bg-zinc-700"></span>
+        </button>
+        <button class="station-card flex items-center gap-4 rounded-2xl border border-line bg-panel p-4 text-left transition hover:border-mint/40" data-station="Voces Cercanas" data-description="Conversación y cultura · En vivo">
+          <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-orange-950 to-rose-900 text-orange-300"><i data-lucide="audio-lines" class="h-5 w-5"></i></span><span class="min-w-0"><span class="block truncate text-sm font-bold text-white">Voces Cercanas</span><span class="mt-1 block text-xs text-zinc-500">Conversación y cultura · En vivo</span></span><span class="ml-auto h-2 w-2 shrink-0 rounded-full bg-zinc-700"></span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/95 backdrop-blur-xl">
+    <div class="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
+      <div class="flex min-w-0 items-center gap-3">
+        <span class="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-900 to-teal-800 text-mint"><i data-lucide="radio" class="h-5 w-5"></i><span class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-ink bg-mint"></span></span>
+        <div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[9px] font-black uppercase tracking-widest text-mint">En vivo</span><span class="h-1 w-1 rounded-full bg-zinc-600"></span><span id="radioDescription" class="truncate text-[10px] text-zinc-500">Música tranquila</span></div><p id="radioStation" class="truncate text-sm font-bold text-white">Frecuencia Serena</p></div>
+      </div>
+      <div class="flex items-center gap-3 sm:gap-5">
+        <span class="hidden text-[10px] text-zinc-600 sm:block">Señal de demostración</span>
+        <button id="radioToggle" aria-label="Pausar radio" class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-ink transition hover:scale-105"><i data-lucide="pause" class="h-4 w-4 fill-current"></i></button>
+      </div>
+    </div>
+  </footer>
+
+  <div id="authModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="relative w-full max-w-md rounded-3xl border border-line bg-panel p-6 shadow-2xl sm:p-8">
+      <button id="closeAuthModal" type="button" class="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white" aria-label="Cerrar"><i data-lucide="x" class="h-4 w-4"></i></button>
+      <div class="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-ember/10 text-ember"><i data-lucide="user-round" class="h-6 w-6"></i></div>
+      <h2 id="authTitle" class="text-2xl font-semibold text-white">Iniciar sesión</h2>
+      <p class="mt-2 text-sm leading-6 text-zinc-400">Accede a tu cuenta para publicar videos y guardar tus clips.</p>
+      <form id="authForm" class="mt-6 space-y-4">
+        <label id="authNameField" class="hidden block text-xs font-medium text-zinc-300">Nombre
+          <input id="authName" type="text" autocomplete="name" maxlength="80" class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="Tu nombre">
+        </label>
+        <label class="block text-xs font-medium text-zinc-300">Correo electrónico
+          <input id="authEmail" type="email" autocomplete="email" required class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="tu@correo.com">
+        </label>
+        <label class="block text-xs font-medium text-zinc-300">Contraseña
+          <input id="authPassword" type="password" autocomplete="current-password" minlength="6" required class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="Al menos 6 caracteres">
+        </label>
+        <p id="authMessage" class="hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-200" role="alert"></p>
+        <button id="authSubmit" type="submit" class="w-full rounded-full bg-ember px-4 py-3 text-sm font-bold text-ink transition hover:bg-orange-300">Iniciar sesión</button>
+      </form>
+      <p class="mt-5 text-center text-sm text-zinc-400"><span id="authSwitchText">¿No tienes cuenta?</span>
+        <button id="authModeToggle" type="button" class="ml-1 font-semibold text-ember hover:text-orange-300">Regístrate</button>
+      </p>
+    </div>
+  </div>
+  <div id="toast" role="status" aria-live="polite" class="pointer-events-none fixed bottom-24 left-1/2 z-50 -translate-x-1/2 translate-y-2 rounded-full border border-line bg-panel px-5 py-3 text-sm font-medium text-white opacity-0 shadow-xl transition-all"></div>
+
+  <script>
+    lucide.createIcons();
+
+    // Set these public client values on window before this script in the hosting page.
+    const supabaseUrl = window.OMNISTREAM_SUPABASE_URL || '';
+    const supabaseAnonKey = window.OMNISTREAM_SUPABASE_ANON_KEY || '';
+    const clipApiUrl = window.OMNISTREAM_CLIP_API_URL || '/api/clip/trim';
+    const supabaseClient = supabaseUrl && supabaseAnonKey && window.supabase
+      ? window.supabase.createClient(supabaseUrl, supabaseAnonKey)
+      : null;
+    const mediaBucket = 'user-media';
+    let currentUser = null;
+    let uploadedVideoPath = null;
+    let authMode = 'signin';
+    const searchInputs = [document.getElementById('searchInput'), document.getElementById('mobileSearch')].filter(Boolean);
+    const cards = [...document.querySelectorAll('.community-card')];
+    const emptyResults = document.getElementById('emptyResults');
+    let activeFilter = 'all';
+    let toastTimer;
+
+    function filterVideos(query = '') {
+      const term = query.trim().toLocaleLowerCase('es');
+      let visible = 0;
+      cards.forEach(card => {
+        const matchesQuery = card.dataset.search.toLocaleLowerCase('es').includes(term);
+        const matchesFilter = activeFilter === 'all' || card.dataset.category === activeFilter;
+        card.classList.toggle('hidden', !matchesQuery || !matchesFilter);
+        if (matchesQuery && matchesFilter) visible++;
+      });
+      emptyResults.classList.toggle('hidden', visible > 0);
+    }
+
+    searchInputs.forEach(input => input.addEventListener('input', event => {
+      searchInputs.forEach(other => { if (other !== event.target) other.value = event.target.value; });
+      filterVideos(event.target.value);
+    }));
+
+    document.querySelectorAll('.filter-chip').forEach(button => button.addEventListener('click', () => {
+      activeFilter = button.dataset.filter;
+      document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.toggle('bg-white', chip === button);
+        chip.classList.toggle('text-ink', chip === button);
+        chip.classList.toggle('font-bold', chip === button);
+        chip.classList.toggle('border', chip !== button);
+        chip.classList.toggle('border-line', chip !== button);
+        chip.classList.toggle('bg-panel', chip !== button);
+        chip.classList.toggle('text-zinc-400', chip !== button);
+      });
+      filterVideos(searchInputs[0]?.value || '');
+    }));
+
+    document.querySelectorAll('.video-launch').forEach(button => button.addEventListener('click', () => showToast('El reproductor de video estará disponible próximamente')));
+
+    const authModal = document.getElementById('authModal');
+    const authForm = document.getElementById('authForm');
+    const authMessage = document.getElementById('authMessage');
+    function openAuthModal(mode = 'signin') {
+      setAuthMode(mode);
+      authModal.classList.remove('hidden');
+      authModal.classList.add('flex');
+      document.getElementById('authEmail').focus();
+    }
+    function closeAuthModal() {
+      authModal.classList.add('hidden');
+      authModal.classList.remove('flex');
+      authMessage.classList.add('hidden');
+    }
+    function setAuthMode(mode) {
+      authMode = mode;
+      const signingUp = mode === 'signup';
+      document.getElementById('authTitle').textContent = signingUp ? 'Crear cuenta' : 'Iniciar sesión';
+      document.getElementById('authSubmit').textContent = signingUp ? 'Registrarse' : 'Iniciar sesión';
+      document.getElementById('authNameField').classList.toggle('hidden', !signingUp);
+      document.getElementById('authName').required = signingUp;
+      document.getElementById('authName').autocomplete = signingUp ? 'name' : 'off';
+      document.getElementById('authPassword').autocomplete = signingUp ? 'new-password' : 'current-password';
+      document.getElementById('authSwitchText').textContent = signingUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
+      document.getElementById('authModeToggle').textContent = signingUp ? 'Inicia sesión' : 'Regístrate';
+    }
+    function showAuthMessage(message) {
+      authMessage.textContent = message;
+      authMessage.classList.remove('hidden');
+    }
+    function renderProfile(user) {
+      const previousUserId = currentUser?.id;
+      currentUser = user;
+      if (uploadedVideoPath && previousUserId !== user?.id) {
+        uploadedVideoPath = null;
+        const video = document.getElementById('clipVideo');
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      }
+      const button = document.getElementById('authButton');
+      const label = document.getElementById('authButtonLabel');
+      const existingImage = button.querySelector('img');
+      if (existingImage) existingImage.remove();
+      const existingInitials = button.querySelector('.profile-initials');
+      if (existingInitials) existingInitials.remove();
+      const icon = button.querySelector('svg');
+      if (icon) icon.classList.toggle('hidden', Boolean(user));
+      label.textContent = user ? (user.user_metadata?.full_name || user.email?.split('@')[0] || 'Mi cuenta') : 'Iniciar sesión';
+      label.classList.toggle('hidden', !user);
+      label.classList.toggle('sm:inline', Boolean(user));
+      button.setAttribute('aria-label', user ? 'Abrir menú de usuario' : 'Iniciar sesión o registrarse');
+      document.getElementById('profileEmail').textContent = user?.email || '';
+      if (user) {
+        const avatarUrl = user.user_metadata?.avatar_url;
+        if (avatarUrl) {
+          const avatar = document.createElement('img');
+          avatar.src = avatarUrl;
+          avatar.alt = '';
+          avatar.referrerPolicy = 'no-referrer';
+          avatar.className = 'h-7 w-7 rounded-full object-cover';
+          button.prepend(avatar);
+        } else {
+          const initials = document.createElement('span');
+          initials.className = 'profile-initials grid h-7 w-7 place-items-center rounded-full bg-ember/20 text-[10px] font-bold text-ember';
+          const nameParts = label.textContent.trim().split(/\s+/);
+          initials.textContent = nameParts.length > 1
+            ? `${Array.from(nameParts[0])[0]}${Array.from(nameParts[1])[0]}`.toUpperCase()
+            : Array.from(nameParts[0] || 'U')[0].toUpperCase();
+          button.prepend(initials);
+        }
+      }
+    }
+    function ensureSupabase() {
+      if (!supabaseClient) {
+        showToast(window.supabase
+          ? 'Configura OMNISTREAM_SUPABASE_URL y OMNISTREAM_SUPABASE_ANON_KEY para habilitar tu cuenta.'
+          : 'No se pudo cargar Supabase JS. Comprueba la conexión y vuelve a intentarlo.');
+        return false;
+      }
+      return true;
+    }
+    function requireUser() {
+      if (currentUser) return true;
+      openAuthModal();
+      return false;
+    }
+
+    document.getElementById('authButton').addEventListener('click', () => {
+      if (!currentUser) {
+        openAuthModal();
+      } else {
+        document.getElementById('profileMenu').classList.toggle('hidden');
+      }
+    });
+    document.getElementById('closeAuthModal').addEventListener('click', closeAuthModal);
+    authModal.addEventListener('click', event => {
+      if (event.target === authModal) closeAuthModal();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !authModal.classList.contains('hidden')) closeAuthModal();
+    });
+    document.getElementById('authModeToggle').addEventListener('click', () => setAuthMode(authMode === 'signin' ? 'signup' : 'signin'));
+    authForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!ensureSupabase()) return;
+      const submitButton = document.getElementById('authSubmit');
+      submitButton.disabled = true;
+      authMessage.classList.add('hidden');
+      try {
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+        const result = authMode === 'signup'
+          ? await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: document.getElementById('authName').value.trim() } }
+          })
+          : await supabaseClient.auth.signInWithPassword({ email, password });
+        if (result.error) throw result.error;
+        if (authMode === 'signup' && !result.data.session) {
+          closeAuthModal();
+          showToast('Revisa tu correo para confirmar la cuenta.');
+        } else {
+          closeAuthModal();
+          showToast(authMode === 'signup' ? 'Cuenta creada.' : 'Sesión iniciada.');
+        }
+      } catch (error) {
+        showAuthMessage(error.message || 'No se pudo autenticar. Inténtalo de nuevo.');
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+    document.getElementById('signOutButton').addEventListener('click', async () => {
+      document.getElementById('profileMenu').classList.add('hidden');
+      if (!ensureSupabase()) return;
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) showToast(`No se pudo cerrar sesión: ${error.message}`);
+    });
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange((_event, session) => renderProfile(session?.user || null));
+      supabaseClient.auth.getSession().then(({ data, error }) => {
+        if (error) showToast(`No se pudo restaurar la sesión: ${error.message}`);
+        renderProfile(data.session?.user || null);
+      });
+    }
+
+    const uploadVideoInput = document.getElementById('uploadVideoInput');
+    document.getElementById('uploadVideoButton').addEventListener('click', () => {
+      if (!requireUser() || !ensureSupabase()) return;
+      uploadVideoInput.click();
+    });
+    uploadVideoInput.addEventListener('change', async () => {
+      const file = uploadVideoInput.files?.[0];
+      uploadVideoInput.value = '';
+      if (!file || !currentUser || !ensureSupabase()) return;
+      if (!file.type.startsWith('video/')) {
+        showToast('Selecciona un archivo de video válido.');
+        return;
+      }
+      const extension = file.name.split('.').pop()?.toLowerCase() || 'mp4';
+      const path = `${currentUser.id}/videos/${crypto.randomUUID()}.${extension}`;
+      showToast('Subiendo video a tu cuenta…');
+      const { error: uploadError } = await supabaseClient.storage.from(mediaBucket).upload(path, file, {
+        contentType: file.type,
+        upsert: false
+      });
+      if (uploadError) {
+        showToast(`No se pudo subir el video: ${uploadError.message}`);
+        return;
+      }
+      const { data, error: urlError } = await supabaseClient.storage.from(mediaBucket).createSignedUrl(path, 3600);
+      if (urlError) {
+        showToast(`El video se subió, pero no se pudo abrir: ${urlError.message}`);
+        return;
+      }
+      uploadedVideoPath = path;
+      clipVideo.src = data.signedUrl;
+      clipVideo.load();
+      showToast('Video guardado en tu cuenta. Ya puedes crear un clip.');
+      document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    const clipVideo = document.getElementById('clipVideo');
+    const clipRange = document.getElementById('clipRange');
+    const clipLength = 20;
+    const formatTime = seconds => {
+      if (!Number.isFinite(seconds)) return '--:--';
+      const wholeSeconds = Math.floor(seconds);
+      return `${String(Math.floor(wholeSeconds / 60)).padStart(2, '0')}:${String(wholeSeconds % 60).padStart(2, '0')}`;
+    };
+    function updateClip() {
+      const duration = Number.isFinite(clipVideo.duration) ? clipVideo.duration : 0;
+      const currentTime = Math.min(clipVideo.currentTime || 0, duration || 0);
+      clipRange.max = String(duration);
+      clipRange.value = String(currentTime);
+      document.getElementById('clipTime').textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+      document.getElementById('clipStart').textContent = formatTime(currentTime);
+      document.getElementById('clipEnd').textContent = formatTime(Math.min(currentTime + clipLength, duration || currentTime + clipLength));
+      document.getElementById('clipTotal').textContent = formatTime(duration);
+    }
+    clipVideo.addEventListener('loadedmetadata', updateClip);
+    clipVideo.addEventListener('durationchange', updateClip);
+    clipVideo.addEventListener('timeupdate', updateClip);
+    clipVideo.addEventListener('seeked', updateClip);
+    clipVideo.addEventListener('error', () => showToast('No se pudo cargar el video de prueba.'));
+    clipRange.addEventListener('input', () => {
+      clipVideo.currentTime = Number(clipRange.value);
+      updateClip();
+    });
+
+    const playerToggle = document.getElementById('playerToggle');
+    function updatePlayerToggle() {
+      const playing = !clipVideo.paused && !clipVideo.ended;
+      playerToggle.classList.toggle('hidden', playing);
+      playerToggle.setAttribute('aria-label', playing ? 'Pausar video' : 'Reproducir video');
+      playerToggle.innerHTML = `<i data-lucide="${playing ? 'pause' : 'play'}" class="h-5 w-5${playing ? '' : ' ml-0.5 fill-current'}"></i>`;
+      lucide.createIcons();
+    }
+    clipVideo.addEventListener('play', updatePlayerToggle);
+    clipVideo.addEventListener('pause', updatePlayerToggle);
+    clipVideo.addEventListener('ended', updatePlayerToggle);
+    playerToggle.addEventListener('click', () => {
+      if (clipVideo.paused) {
+        clipVideo.play().catch(() => showToast('No se pudo iniciar la reproducción.'));
+      } else {
+        clipVideo.pause();
+      }
+    });
+    updateClip();
+    document.getElementById('clipCaption').addEventListener('input', event => {
+      document.getElementById('captionPreview').textContent = event.target.value || 'Tu momento, tu historia';
+    });
+    document.getElementById('shareClip').addEventListener('click', async () => {
+      if (!requireUser() || !ensureSupabase()) return;
+      const duration = clipVideo.duration;
+      const startTime = Number(clipRange.value);
+      const endTime = Math.min(startTime + clipLength, duration);
+      if (!Number.isFinite(duration) || endTime <= startTime) {
+        showToast('Espera a que cargue el video y selecciona un tramo válido.');
+        return;
+      }
+      let sourceUrl = clipVideo.currentSrc;
+      if (!sourceUrl) {
+        showToast('No hay un video cargado para recortar.');
+        return;
+      }
+      const button = document.getElementById('shareClip');
+      button.disabled = true;
+      button.classList.add('cursor-wait', 'opacity-60');
+      try {
+        if (uploadedVideoPath) {
+          const { data, error } = await supabaseClient.storage.from(mediaBucket).createSignedUrl(uploadedVideoPath, 3600);
+          if (error) throw new Error(`No se pudo acceder al video subido: ${error.message}`);
+          sourceUrl = data.signedUrl;
+        }
+        const response = await fetch(clipApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            videoUrl: sourceUrl,
+            startTimeSeconds: startTime,
+            endTimeSeconds: endTime
+          })
+        });
+        if (!response.ok) {
+          const problem = await response.json().catch(() => null);
+          throw new Error(problem?.detail || `El servidor no pudo crear el clip (HTTP ${response.status}).`);
+        }
+        const clipFile = await response.blob();
+        const clipPath = `${currentUser.id}/clips/${crypto.randomUUID()}.mp4`;
+        const { error: uploadError } = await supabaseClient.storage.from(mediaBucket).upload(clipPath, clipFile, {
+          contentType: 'video/mp4',
+          upsert: false
+        });
+        if (uploadError) throw new Error(`No se pudo guardar el clip: ${uploadError.message}`);
+        const { error: insertError } = await supabaseClient.from('media_clips').insert({
+          user_id: currentUser.id,
+          title: document.getElementById('clipCaption').value.trim() || 'Clip sin título',
+          start_time: Math.floor(startTime),
+          end_time: Math.ceil(endTime),
+          aspect_ratio: '9:16',
+          clip_url: clipPath,
+          status: 'ready'
+        });
+        if (insertError) {
+          await supabaseClient.storage.from(mediaBucket).remove([clipPath]);
+          throw new Error(`No se pudo guardar el clip en tu cuenta: ${insertError.message}`);
+        }
+        showToast('Clip creado y guardado en tu cuenta.');
+      } catch (error) {
+        showToast(error.message || 'No se pudo crear el clip.');
+      } finally {
+        button.disabled = false;
+        button.classList.remove('cursor-wait', 'opacity-60');
+      }
+    });
+
+    document.querySelectorAll('.station-card').forEach(card => card.addEventListener('click', () => {
+      document.querySelectorAll('.station-card').forEach(station => {
+        station.classList.remove('border-mint/30', 'bg-mint/[.06]');
+        station.classList.add('border-line', 'bg-panel');
+        station.querySelector('span:last-child').classList.replace('bg-mint', 'bg-zinc-700');
+      });
+      card.classList.remove('border-line', 'bg-panel');
+      card.classList.add('border-mint/30', 'bg-mint/[.06]');
+      card.querySelector('span:last-child').classList.replace('bg-zinc-700', 'bg-mint');
+      document.getElementById('radioStation').textContent = card.dataset.station;
+      document.getElementById('radioDescription').textContent = card.dataset.description.split(' · ')[0];
+      showToast(`Sintonizando ${card.dataset.station}`);
+    }));
+
+    let radioPlaying = true;
+    document.getElementById('radioToggle').addEventListener('click', event => {
+      radioPlaying = !radioPlaying;
+      event.currentTarget.innerHTML = `<i data-lucide="${radioPlaying ? 'pause' : 'play'}" class="h-4 w-4${radioPlaying ? ' fill-current' : ''}"></i>`;
+      event.currentTarget.setAttribute('aria-label', radioPlaying ? 'Pausar radio' : 'Reproducir radio');
+      lucide.createIcons();
+      showToast(radioPlaying ? 'Radio en reproducción' : 'Radio en pausa');
+    });
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.remove('opacity-0', 'translate-y-2');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.add('opacity-0', 'translate-y-2'), 2600);
+    }
+  </script>
+</body>
+</html>

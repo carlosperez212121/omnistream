@@ -1,0 +1,17 @@
+@OmniStream.Api_HostAddress = http://localhost:5288
+
+GET {{OmniStream.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+POST {{OmniStream.Api_HostAddress}}/api/clip/trim
+Content-Type: application/json
+
+{
+  "videoUrl": "https://example.com/video.mp4",
+  "startTimeSeconds": 5,
+  "endTimeSeconds": 20
+}
+
+###
