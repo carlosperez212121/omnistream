@@ -361,7 +361,7 @@
       <button id="closeAuthModal" type="button" class="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white" aria-label="Cerrar"><i data-lucide="x" class="h-4 w-4"></i></button>
       <div class="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-ember/10 text-ember"><i data-lucide="user-round" class="h-6 w-6"></i></div>
       <h2 id="authTitle" class="text-2xl font-semibold text-white">Iniciar sesión</h2>
-      <p class="mt-2 text-sm leading-6 text-zinc-400">Accede a tu cuenta para publicar videos y guardar tus clips.</p>
+      <p id="authDescription" class="mt-2 text-sm leading-6 text-zinc-400">Accede a tu cuenta para publicar videos y guardar tus clips.</p>
       <form id="authForm" class="mt-6 space-y-4">
         <label id="authNameField" class="hidden block text-xs font-medium text-zinc-300">Nombre
           <input id="authName" type="text" autocomplete="name" maxlength="80" class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="Tu nombre">
@@ -387,6 +387,14 @@
         </svg>
         <span id="googleSignInLabel">Continuar con Google</span>
       </button>
+      <form id="googleDemoForm" class="mt-5 hidden space-y-4">
+        <label class="block text-xs font-medium text-zinc-300">Correo de Google de prueba
+          <input id="googleDemoEmail" type="email" autocomplete="email" required class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="tu@gmail.com">
+        </label>
+        <p class="text-xs leading-5 text-amber-200/80">Modo de demostración: este correo no se verifica con Google. Para autenticar cuentas reales, configura Google en Supabase.</p>
+        <button id="googleDemoSubmit" type="submit" class="w-full rounded-full bg-ember px-4 py-3 text-sm font-bold text-ink transition hover:bg-orange-300">Continuar en modo de demostración</button>
+        <button id="googleDemoCancel" type="button" class="w-full rounded-full border border-line px-4 py-3 text-sm font-semibold text-zinc-300 transition hover:bg-white/5">Volver</button>
+      </form>
       <p class="mt-5 text-center text-sm text-zinc-400"><span id="authSwitchText">¿No tienes cuenta?</span>
         <button id="authModeToggle" type="button" class="ml-1 font-semibold text-ember hover:text-orange-300">Regístrate</button>
       </p>
@@ -405,6 +413,9 @@
       ? window.supabase.createClient(supabaseUrl, supabaseAnonKey)
       : null;
     const mediaBucket = 'user-media';
+    const localUsersStorageKey = 'omnistream.localUsers';
+    const localSessionStorageKey = 'omnistream.localSession';
+    const localPasswordIterations = 210000;
     let currentUser = null;
     let uploadedVideoPath = null;
     let authMode = 'signin';
@@ -488,12 +499,15 @@
     const authSubmit = document.getElementById('authSubmit');
     const googleSignIn = document.getElementById('googleSignIn');
     const googleSignInLabel = document.getElementById('googleSignInLabel');
+    const googleDemoForm = document.getElementById('googleDemoForm');
+    const googleDemoSubmit = document.getElementById('googleDemoSubmit');
     const authModeToggle = document.getElementById('authModeToggle');
     const authPassword = document.getElementById('authPassword');
     const authConfirmPassword = document.getElementById('authConfirmPassword');
     let authPending = false;
     function openAuthModal(mode = 'signin') {
       setAuthMode(mode);
+      setGoogleDemoMode(false);
       authModal.classList.remove('hidden');
       authModal.classList.add('flex');
       document.getElementById('authEmail').focus();
@@ -502,6 +516,21 @@
       authModal.classList.add('hidden');
       authModal.classList.remove('flex');
       authMessage.classList.add('hidden');
+      setGoogleDemoMode(false);
+    }
+    function setGoogleDemoMode(enabled) {
+      authForm.classList.toggle('hidden', enabled);
+      googleSignIn.classList.toggle('hidden', enabled);
+      googleDemoForm.classList.toggle('hidden', !enabled);
+      document.getElementById('authModeToggle').parentElement.classList.toggle('hidden', enabled);
+      document.getElementById('authTitle').textContent = enabled
+        ? 'Continuar con Google'
+        : authMode === 'signup' ? 'Crear cuenta' : 'Iniciar sesión';
+      document.getElementById('authDescription').textContent = enabled
+        ? 'No hay un proveedor de Google conectado. Puedes entrar con un correo de prueba.'
+        : 'Accede a tu cuenta para publicar videos y guardar tus clips.';
+      authMessage.classList.add('hidden');
+      if (enabled) document.getElementById('googleDemoEmail').focus();
     }
     function setAuthMode(mode) {
       authMode = mode;
@@ -524,6 +553,7 @@
       authForm.setAttribute('aria-busy', String(pending));
       authSubmit.disabled = pending;
       googleSignIn.disabled = pending;
+      googleDemoSubmit.disabled = pending;
       authModeToggle.disabled = pending;
       authSubmit.textContent = pending && method === 'form'
         ? 'Procesando…'
@@ -579,6 +609,93 @@
         }
       }
     }
+    function getLocalUsers() {
+      const storedUsers = window.localStorage.getItem(localUsersStorageKey);
+      if (!storedUsers) return [];
+      const users = JSON.parse(storedUsers);
+      if (!Array.isArray(users)) throw new Error('Los datos de las cuentas locales no son válidos.');
+      return users;
+    }
+    function getLocalUser(email) {
+      return getLocalUsers().find(user => user.email === email) || null;
+    }
+    function toLocalProfile(user) {
+      return {
+        id: user.id,
+        email: user.email,
+        user_metadata: { full_name: user.name },
+        app_metadata: { provider: user.provider || 'local' }
+      };
+    }
+    function saveLocalSession(user) {
+      const profile = toLocalProfile(user);
+      window.localStorage.setItem(localSessionStorageKey, JSON.stringify(profile));
+      renderProfile(profile);
+      closeAuthModal();
+    }
+    function createSalt() {
+      if (!window.crypto?.subtle || !window.crypto?.getRandomValues) {
+        throw new Error('Este navegador no permite almacenar contraseñas de forma segura. Usa una conexión HTTPS e inténtalo de nuevo.');
+      }
+      const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+      return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+    async function hashLocalPassword(password, salt) {
+      if (!window.crypto?.subtle) {
+        throw new Error('Este navegador no permite almacenar contraseñas de forma segura. Usa una conexión HTTPS e inténtalo de nuevo.');
+      }
+      const key = await window.crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(password),
+        'PBKDF2',
+        false,
+        ['deriveBits']
+      );
+      const hash = await window.crypto.subtle.deriveBits({
+        name: 'PBKDF2',
+        salt: Uint8Array.from(salt.match(/.{2}/g), byte => Number.parseInt(byte, 16)),
+        iterations: localPasswordIterations,
+        hash: 'SHA-256'
+      }, key, 256);
+      return Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+    function localHashesMatch(left, right) {
+      if (typeof left !== 'string' || typeof right !== 'string' || left.length !== right.length) return false;
+      let difference = 0;
+      for (let index = 0; index < left.length; index++) {
+        difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+      }
+      return difference === 0;
+    }
+    async function registerLocalUser(name, email, password) {
+      const users = getLocalUsers();
+      if (users.some(user => user.email === email)) {
+        throw new Error('Ya existe una cuenta con este correo electrónico.');
+      }
+      const salt = createSalt();
+      const user = {
+        id: `local-${salt}`,
+        name,
+        email,
+        salt,
+        passwordHash: await hashLocalPassword(password, salt),
+        createdAt: new Date().toISOString()
+      };
+      users.push(user);
+      window.localStorage.setItem(localUsersStorageKey, JSON.stringify(users));
+      return user;
+    }
+    async function signInLocalUser(email, password) {
+      const user = getLocalUser(email);
+      if (!user || !user.salt || !user.passwordHash) {
+        throw new Error('Correo electrónico o contraseña incorrectos.');
+      }
+      const passwordHash = await hashLocalPassword(password, user.salt);
+      if (!localHashesMatch(passwordHash, user.passwordHash)) {
+        throw new Error('Correo electrónico o contraseña incorrectos.');
+      }
+      return user;
+    }
     function ensureSupabase() {
       if (!supabaseClient) {
         showToast(window.supabase
@@ -610,10 +727,22 @@
       if (event.key === 'Escape' && !authModal.classList.contains('hidden')) closeAuthModal();
     });
     authModeToggle.addEventListener('click', () => {
-      if (!authPending) setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+      if (!authPending) {
+        setGoogleDemoMode(false);
+        setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+      }
     });
+    document.getElementById('googleDemoCancel').addEventListener('click', () => setGoogleDemoMode(false));
     googleSignIn.addEventListener('click', async () => {
-      if (authPending || !ensureSupabase()) return;
+      if (authPending) return;
+      if (!supabaseClient) {
+        if (supabaseUrl || supabaseAnonKey) {
+          ensureSupabase();
+          return;
+        }
+        setGoogleDemoMode(true);
+        return;
+      }
       setAuthPending(true, 'google');
       authMessage.classList.add('hidden');
       try {
@@ -629,20 +758,56 @@
         setAuthPending(false);
       }
     });
+    googleDemoForm.addEventListener('submit', event => {
+      event.preventDefault();
+      if (authPending || !googleDemoForm.reportValidity()) return;
+      const email = document.getElementById('googleDemoEmail').value.trim().toLowerCase();
+      if (!email) return;
+      setAuthPending(true, 'google');
+      try {
+        saveLocalSession({
+          id: `google-demo:${encodeURIComponent(email)}`,
+          name: email.split('@')[0].replace(/[._-]+/g, ' '),
+          email,
+          provider: 'google-demo'
+        });
+        showToast('Sesión iniciada en modo de demostración.');
+      } catch (error) {
+        showAuthMessage(`No se pudo guardar la sesión: ${error.message || 'Inténtalo de nuevo.'}`);
+      } finally {
+        setAuthPending(false);
+      }
+    });
     authForm.addEventListener('submit', async event => {
       event.preventDefault();
-      if (authPending || !ensureSupabase()) return;
+      if (authPending) return;
       authMessage.classList.add('hidden');
       const mode = authMode;
       const email = document.getElementById('authEmail').value.trim();
       const password = authPassword.value;
       if (mode === 'signup' && password !== authConfirmPassword.value) {
-        showAuthMessage('Las contraseñas no coinciden.');
+        window.alert('Las contraseñas no coinciden.');
         authConfirmPassword.focus();
         return;
       }
       setAuthPending(true, 'form');
       try {
+        if (!supabaseClient) {
+          if (mode === 'signup') {
+            const user = await registerLocalUser(
+              document.getElementById('authName').value.trim(),
+              email.toLowerCase(),
+              password
+            );
+            saveLocalSession(user);
+            showToast('Cuenta creada correctamente. Sesión iniciada.');
+          } else {
+            const user = await signInLocalUser(email.toLowerCase(), password);
+            saveLocalSession(user);
+            showToast('Sesión iniciada.');
+          }
+          return;
+        }
         const result = mode === 'signup'
           ? await supabaseClient.auth.signUp({
             email,
@@ -669,6 +834,16 @@
     });
     document.getElementById('signOutButton').addEventListener('click', async () => {
       document.getElementById('profileMenu').classList.add('hidden');
+      if (['local', 'google-demo'].includes(currentUser?.app_metadata?.provider)) {
+        try {
+          window.localStorage.removeItem(localSessionStorageKey);
+          renderProfile(null);
+          showToast('Sesión cerrada.');
+        } catch (error) {
+          showToast(`No se pudo cerrar sesión: ${error.message || 'Inténtalo de nuevo.'}`);
+        }
+        return;
+      }
       if (!ensureSupabase()) return;
       const { error } = await supabaseClient.auth.signOut();
       if (error) showToast(`No se pudo cerrar sesión: ${error.message}`);
@@ -689,6 +864,13 @@
           }
         })
         .catch(error => showToast(`No se pudo restaurar la sesión: ${error.message || 'Inténtalo de nuevo.'}`));
+    } else {
+      try {
+        const storedSession = window.localStorage.getItem(localSessionStorageKey);
+        if (storedSession) renderProfile(JSON.parse(storedSession));
+      } catch (error) {
+        showToast(`No se pudo restaurar la sesión local: ${error.message || 'Inténtalo de nuevo.'}`);
+      }
     }
 
     const uploadVideoInput = document.getElementById('uploadVideoInput');
