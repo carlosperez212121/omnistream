@@ -878,7 +878,7 @@
       if (!supabaseClient) return;
       const { data: videos, error } = await supabaseClient
         .from('videos')
-        .select('id, usuario_id, title, description, video_path, created_at')
+        .select('id, usuario_id, titulo, description, video_path, created_at')
         .eq('visibility', 'public')
         .order('created_at', { ascending: false });
       if (error) throw new Error(`No se pudieron cargar los videos públicos: ${error.message}`);
@@ -899,7 +899,7 @@
         const { data, error: urlError } = await supabaseClient.storage
           .from(videosBucket)
           .createSignedUrl(video.video_path, 3600);
-        if (urlError) throw new Error(`No se pudo preparar el video "${video.title}": ${urlError.message}`);
+        if (urlError) throw new Error(`No se pudo preparar el video "${video.titulo}": ${urlError.message}`);
         return { ...video, signedUrl: data.signedUrl };
       }));
 
@@ -910,13 +910,13 @@
         card.className = 'community-card group';
         card.dataset.databaseVideo = '';
         card.dataset.category = 'comunidad';
-        card.dataset.search = `${video.title} ${video.description} ${video.usuario_id}`.toLocaleLowerCase('es');
+        card.dataset.search = `${video.titulo} ${video.description} ${video.usuario_id}`.toLocaleLowerCase('es');
 
         const launch = document.createElement('button');
         launch.type = 'button';
         launch.className = 'video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-950 to-emerald-900 text-left';
         launch.dataset.videoSrc = video.signedUrl;
-        launch.setAttribute('aria-label', `Reproducir ${video.title}`);
+        launch.setAttribute('aria-label', `Reproducir ${video.titulo}`);
         const play = document.createElement('span');
         play.className = 'play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100';
         play.innerHTML = '<i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i>';
@@ -926,7 +926,7 @@
         details.className = 'mt-3 flex flex-wrap items-center justify-between gap-2';
         const title = document.createElement('h3');
         title.className = 'min-w-0 flex-1 truncate text-sm font-semibold text-white';
-        title.textContent = video.title;
+        title.textContent = video.titulo;
         const profileButton = document.createElement('button');
         profileButton.type = 'button';
         profileButton.dataset.channelProfile = video.usuario_id;
