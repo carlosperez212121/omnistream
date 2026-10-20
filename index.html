@@ -389,6 +389,20 @@
     </div>
   </div>
 
+  <div id="channelProfileModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="channelProfileTitle">
+    <section class="w-full max-w-md rounded-2xl border border-line bg-panel p-6 shadow-2xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-mint">Perfil del creador</p>
+          <h2 id="channelProfileTitle" class="mt-2 text-xl font-semibold text-white">Canal</h2>
+          <p class="mt-2 text-sm text-zinc-400"><span data-subscriber-count>0</span> suscriptores</p>
+        </div>
+        <button id="closeChannelProfile" type="button" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white" aria-label="Cerrar perfil del canal"><i data-lucide="x" class="h-4 w-4"></i></button>
+      </div>
+      <button id="channelProfileSubscribe" type="button" class="mt-6 w-full rounded-full bg-ember px-4 py-3 text-sm font-bold text-ink transition hover:bg-orange-300" data-subscribe-channel="">Suscribirse</button>
+    </section>
+  </div>
+
   <div id="authModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="authTitle">
     <div class="relative w-full max-w-md rounded-3xl border border-line bg-panel p-6 shadow-2xl sm:p-8">
       <button id="closeAuthModal" type="button" class="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white" aria-label="Cerrar"><i data-lucide="x" class="h-4 w-4"></i></button>
@@ -461,7 +475,11 @@
     let uploadedVideoPath = null;
     let authMode = 'signin';
     const searchInputs = [document.getElementById('searchInput'), document.getElementById('mobileSearch')].filter(Boolean);
-    const cards = [...document.querySelectorAll('.community-card')];
+    const videoGrid = document.getElementById('videoGrid');
+    const subscribedChannels = new Set();
+    const subscriberCounts = new Map();
+    const busyChannels = new Set();
+    let subscriptionRefreshVersion = 0;
     const emptyResults = document.getElementById('emptyResults');
     let activeFilter = 'all';
     let toastTimer;
@@ -491,8 +509,8 @@
     function filterVideos(query = '') {
       const term = query.trim().toLocaleLowerCase('es');
       let visible = 0;
-      cards.forEach(card => {
-        const matchesQuery = card.dataset.search.toLocaleLowerCase('es').includes(term);
+      videoGrid.querySelectorAll('.community-card').forEach(card => {
+        const matchesQuery = (card.dataset.search || '').toLocaleLowerCase('es').includes(term);
         const matchesFilter = activeFilter === 'all' || card.dataset.category === activeFilter;
         card.classList.toggle('hidden', !matchesQuery || !matchesFilter);
         if (matchesQuery && matchesFilter) visible++;
@@ -521,6 +539,9 @@
 
     const mainPlayerModal = document.getElementById('mainPlayerModal');
     const mainPlayerVideo = document.getElementById('mainPlayerVideo');
+    const channelProfileModal = document.getElementById('channelProfileModal');
+    const channelProfileSubscribe = document.getElementById('channelProfileSubscribe');
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     function closeMainPlayer() {
       mainPlayerVideo.pause();
       mainPlayerVideo.removeAttribute('src');
@@ -528,7 +549,9 @@
       mainPlayerModal.classList.add('hidden');
       mainPlayerModal.classList.remove('flex');
     }
-    document.querySelectorAll('.video-launch').forEach(button => button.addEventListener('click', async () => {
+    videoGrid.addEventListener('click', async event => {
+      const button = event.target.closest('.video-launch');
+      if (!button) return;
       const source = button.dataset.videoSrc;
       if (!source) {
         showToast('Este video todavía no tiene una fuente disponible.');
@@ -545,7 +568,7 @@
       } catch {
         showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.');
       }
-    }));
+    });
     document.getElementById('closeMainPlayer').addEventListener('click', closeMainPlayer);
     mainPlayerModal.addEventListener('click', event => {
       if (event.target === mainPlayerModal) closeMainPlayer();
@@ -671,6 +694,9 @@
           button.prepend(initials);
         }
       }
+      refreshSubscriptionStates().catch(error => {
+        showToast(`No se pudieron cargar tus suscripciones: ${error.message || 'inténtalo de nuevo.'}`);
+      });
     }
     function getLocalUsers() {
       const storedUsers = window.localStorage.getItem(localUsersStorageKey);
@@ -774,6 +800,216 @@
       showAuthMessage(message);
       return false;
     }
+
+    function updateChannelControls(channelId) {
+      const subscribed = subscribedChannels.has(channelId);
+      const isOwnChannel = currentUser?.id === channelId;
+      document.querySelectorAll('[data-subscribe-channel]').forEach(button => {
+        if (button.dataset.subscribeChannel !== channelId) return;
+        button.textContent = isOwnChannel ? 'Tu canal' : subscribed ? 'Suscrito' : 'Suscribirse';
+        button.setAttribute('aria-pressed', String(subscribed));
+        button.disabled = isOwnChannel || busyChannels.has(channelId);
+        button.classList.toggle('bg-white/10', subscribed || isOwnChannel);
+        button.classList.toggle('text-white', subscribed || isOwnChannel);
+        button.classList.toggle('bg-ember', !subscribed && !isOwnChannel);
+        button.classList.toggle('text-ink', !subscribed && !isOwnChannel);
+      });
+      const count = String(subscriberCounts.get(channelId) || 0);
+      document.querySelectorAll('[data-subscriber-count]').forEach(element => {
+        if (element.dataset.subscriberCount === channelId) element.textContent = count;
+      });
+    }
+
+    function createSubscribeButton(channelId, className = '') {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.subscribeChannel = channelId;
+      button.className = `rounded-full bg-ember px-4 py-2 text-xs font-bold text-ink transition hover:bg-orange-300 disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim();
+      button.textContent = subscribedChannels.has(channelId) ? 'Suscrito' : 'Suscribirse';
+      updateChannelControls(channelId);
+      return button;
+    }
+
+    function openChannelProfile(channelId) {
+      document.getElementById('channelProfileTitle').textContent = `Canal · ${channelId.slice(0, 8)}`;
+      channelProfileSubscribe.dataset.subscribeChannel = channelId;
+      channelProfileModal.querySelector('[data-subscriber-count]').dataset.subscriberCount = channelId;
+      channelProfileModal.classList.remove('hidden');
+      channelProfileModal.classList.add('flex');
+      updateChannelControls(channelId);
+      lucide.createIcons();
+    }
+
+    function closeChannelProfile() {
+      channelProfileModal.classList.add('hidden');
+      channelProfileModal.classList.remove('flex');
+    }
+
+    async function refreshSubscriptionStates() {
+      const refreshVersion = ++subscriptionRefreshVersion;
+      subscribedChannels.clear();
+      if (supabaseClient && currentUser && uuidPattern.test(currentUser.id)) {
+        const userId = currentUser.id;
+        const { data, error } = await supabaseClient
+          .from('subscripciones')
+          .select('canal_id')
+          .eq('suscriptor_id', userId);
+        if (refreshVersion !== subscriptionRefreshVersion || currentUser?.id !== userId) return;
+        if (error) {
+          showToast(`No se pudieron cargar tus suscripciones: ${error.message}`);
+        } else {
+          data.forEach(subscription => subscribedChannels.add(subscription.canal_id));
+        }
+      }
+      if (refreshVersion !== subscriptionRefreshVersion) return;
+      document.querySelectorAll('[data-subscribe-channel]').forEach(button => {
+        updateChannelControls(button.dataset.subscribeChannel);
+      });
+    }
+
+    async function loadPublishedVideos() {
+      if (!supabaseClient) return;
+      const { data: videos, error } = await supabaseClient
+        .from('videos')
+        .select('id, user_id, title, description, video_path, created_at')
+        .eq('visibility', 'public')
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(`No se pudieron cargar los videos públicos: ${error.message}`);
+
+      const channelIds = [...new Set(videos.map(video => video.user_id))];
+      const counts = await Promise.all(channelIds.map(async channelId => {
+        const { data, error: countError } = await supabaseClient.rpc('contar_suscriptores', {
+          p_canal_id: channelId
+        });
+        if (countError) throw new Error(`No se pudo contar los suscriptores del canal: ${countError.message}`);
+        const count = Number(data);
+        if (!Number.isFinite(count)) throw new Error('El conteo de suscriptores recibido no es válido.');
+        return [channelId, count];
+      }));
+      counts.forEach(([channelId, count]) => subscriberCounts.set(channelId, count));
+
+      const videoData = await Promise.all(videos.map(async video => {
+        const { data, error: urlError } = await supabaseClient.storage
+          .from(videosBucket)
+          .createSignedUrl(video.video_path, 3600);
+        if (urlError) throw new Error(`No se pudo preparar el video "${video.title}": ${urlError.message}`);
+        return { ...video, signedUrl: data.signedUrl };
+      }));
+
+      videoGrid.querySelectorAll('[data-database-video]').forEach(card => card.remove());
+      const fragment = document.createDocumentFragment();
+      videoData.forEach(video => {
+        const card = document.createElement('article');
+        card.className = 'community-card group';
+        card.dataset.databaseVideo = '';
+        card.dataset.category = 'comunidad';
+        card.dataset.search = `${video.title} ${video.description} ${video.user_id}`.toLocaleLowerCase('es');
+
+        const launch = document.createElement('button');
+        launch.type = 'button';
+        launch.className = 'video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-950 to-emerald-900 text-left';
+        launch.dataset.videoSrc = video.signedUrl;
+        launch.setAttribute('aria-label', `Reproducir ${video.title}`);
+        const play = document.createElement('span');
+        play.className = 'play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100';
+        play.innerHTML = '<i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i>';
+        launch.append(play);
+
+        const details = document.createElement('div');
+        details.className = 'mt-3 flex flex-wrap items-center justify-between gap-2';
+        const title = document.createElement('h3');
+        title.className = 'min-w-0 flex-1 truncate text-sm font-semibold text-white';
+        title.textContent = video.title;
+        const profileButton = document.createElement('button');
+        profileButton.type = 'button';
+        profileButton.dataset.channelProfile = video.user_id;
+        profileButton.className = 'text-xs text-zinc-400 transition hover:text-white';
+        profileButton.textContent = `Canal · ${video.user_id.slice(0, 8)}`;
+        details.append(title, profileButton);
+
+        const footer = document.createElement('div');
+        footer.className = 'mt-3 flex flex-wrap items-center justify-between gap-2';
+        const countLabel = document.createElement('span');
+        countLabel.className = 'text-xs text-zinc-500';
+        countLabel.dataset.subscriberCount = video.user_id;
+        countLabel.textContent = String(subscriberCounts.get(video.user_id) || 0);
+        const countText = document.createElement('span');
+        countText.className = 'mr-auto text-xs text-zinc-500';
+        countText.textContent = 'suscriptores';
+        footer.append(countLabel, countText, createSubscribeButton(video.user_id));
+
+        card.append(launch, details, footer);
+        fragment.append(card);
+      });
+      videoGrid.append(fragment);
+      channelIds.forEach(updateChannelControls);
+      lucide.createIcons();
+      filterVideos(searchInputs[0]?.value || '');
+    }
+
+    document.addEventListener('click', async event => {
+      const button = event.target.closest('button[data-subscribe-channel]');
+      if (!button || button.disabled) return;
+      if (!requireUser('Inicia sesión para suscribirte a un canal.')) return;
+      if (!ensureSupabase()) return;
+      if (!uuidPattern.test(currentUser.id)) {
+        showToast('Las cuentas locales de demostración no pueden suscribirse. Inicia sesión con tu cuenta de Supabase.');
+        return;
+      }
+
+      const channelId = button.dataset.subscribeChannel;
+      if (!channelId || !uuidPattern.test(channelId)) {
+        showToast('Este canal no tiene un identificador válido para suscripciones.');
+        return;
+      }
+      const subscriberId = currentUser.id;
+      const wasSubscribed = subscribedChannels.has(channelId);
+      busyChannels.add(channelId);
+      updateChannelControls(channelId);
+      try {
+        const result = wasSubscribed
+          ? await supabaseClient.from('subscripciones').delete()
+            .eq('suscriptor_id', subscriberId).eq('canal_id', channelId)
+          : await supabaseClient.from('subscripciones').insert({
+            suscriptor_id: subscriberId,
+            canal_id: channelId
+          });
+        if (result.error) throw result.error;
+        if (currentUser?.id !== subscriberId) {
+          await refreshSubscriptionStates().catch(error => {
+            showToast(`No se pudieron cargar tus suscripciones: ${error.message || 'inténtalo de nuevo.'}`);
+          });
+          return;
+        }
+        if (wasSubscribed) {
+          subscribedChannels.delete(channelId);
+          subscriberCounts.set(channelId, Math.max(0, (subscriberCounts.get(channelId) || 0) - 1));
+          showToast('Suscripción cancelada.');
+        } else {
+          subscribedChannels.add(channelId);
+          subscriberCounts.set(channelId, (subscriberCounts.get(channelId) || 0) + 1);
+          showToast('Te has suscrito al canal.');
+        }
+        updateChannelControls(channelId);
+      } catch (error) {
+        showToast(`No se pudo ${wasSubscribed ? 'cancelar la suscripción' : 'suscribirte'}: ${error.message || 'inténtalo de nuevo.'}`);
+      } finally {
+        busyChannels.delete(channelId);
+        updateChannelControls(channelId);
+      }
+    });
+
+    videoGrid.addEventListener('click', event => {
+      const button = event.target.closest('button[data-channel-profile]');
+      if (button) openChannelProfile(button.dataset.channelProfile);
+    });
+    document.getElementById('closeChannelProfile').addEventListener('click', closeChannelProfile);
+    channelProfileModal.addEventListener('click', event => {
+      if (event.target === channelProfileModal) closeChannelProfile();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !channelProfileModal.classList.contains('hidden')) closeChannelProfile();
+    });
 
     document.getElementById('authButton').addEventListener('click', () => {
       if (!currentUser) {
@@ -1013,6 +1249,7 @@
         });
         if (insertError) throw new Error(`No se pudieron guardar los datos del video: ${insertError.message}`);
         saved = true;
+        loadPublishedVideos().catch(error => showToast(error.message || 'No se pudo actualizar la lista de videos.'));
 
         uploadedVideoPath = path;
         clipVideo.src = data.signedUrl;
@@ -1567,6 +1804,9 @@
     const clipperSocialHost = document.createElement('div');
     document.getElementById('clipper').append(clipperSocialHost);
     createSocialPanel(clipperSocialHost, 'clipper-player', 'mx-6 mb-6 sm:mx-9 lg:mx-11');
+    if (supabaseClient) {
+      loadPublishedVideos().catch(error => showToast(error.message || 'No se pudieron cargar los videos públicos.'));
+    }
   </script>
 </body>
 </html>

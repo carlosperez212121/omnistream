@@ -98,6 +98,52 @@ create policy "Users can upload their own videos"
   on public.videos for insert to authenticated
   with check (user_id = (select auth.uid()));
 
+create table if not exists public.subscripciones (
+  id uuid primary key default gen_random_uuid(),
+  suscriptor_id uuid not null references auth.users(id) on delete cascade,
+  canal_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default timezone('utc'::text, now()),
+  constraint subscripciones_unicas unique (suscriptor_id, canal_id),
+  constraint subscripciones_no_propio_canal check (suscriptor_id <> canal_id)
+);
+
+alter table public.subscripciones enable row level security;
+
+drop policy if exists "Users can read their own subscriptions" on public.subscripciones;
+create policy "Users can read their own subscriptions"
+  on public.subscripciones for select to authenticated
+  using (suscriptor_id = (select auth.uid()));
+
+drop policy if exists "Users can subscribe as themselves" on public.subscripciones;
+create policy "Users can subscribe as themselves"
+  on public.subscripciones for insert to authenticated
+  with check (
+    suscriptor_id = (select auth.uid())
+    and suscriptor_id <> canal_id
+  );
+
+drop policy if exists "Users can unsubscribe themselves" on public.subscripciones;
+create policy "Users can unsubscribe themselves"
+  on public.subscripciones for delete to authenticated
+  using (suscriptor_id = (select auth.uid()));
+
+grant select, insert, delete on table public.subscripciones to authenticated;
+
+create or replace function public.contar_suscriptores(p_canal_id uuid)
+returns bigint
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select count(*)
+  from public.subscripciones
+  where canal_id = p_canal_id;
+$$;
+
+revoke all on function public.contar_suscriptores(uuid) from public;
+grant execute on function public.contar_suscriptores(uuid) to anon, authenticated;
+
 insert into storage.buckets (id, name, public)
 values ('videos', 'videos', false)
 on conflict (id) do update set public = false;

@@ -8,4 +8,4 @@ Con la clave configurada y Google habilitado como proveedor de autenticación en
 
 ## Subida de videos
 
-Ejecuta `schema.sql` en el SQL Editor de Supabase para crear el bucket privado `videos`, la tabla `public.videos` y las políticas necesarias. Los videos se guardan bajo una carpeta con el ID del usuario; los metadatos incluyen título, descripción, visibilidad y la ruta del archivo (`video_path`).
+Ejecuta `schema.sql` en el SQL Editor de Supabase para crear el bucket privado `videos`, las tablas `public.videos` y `public.subscripciones`, y las políticas necesarias. Los videos se guardan bajo una carpeta con el ID del usuario; los metadatos incluyen título, descripción, visibilidad y la ruta del archivo (`video_path`). Los videos públicos muestran opciones para suscribirse al canal y consultar su perfil y total de suscriptores. La tabla de suscripciones solo permite consultar y modificar las suscripciones propias; el total público se obtiene mediante la función `public.contar_suscriptores`.
