@@ -727,12 +727,12 @@
       if (user) {
         if (supabaseClient && uuidPattern.test(user.id)) {
           syncChannelProfile(user)
+            .catch(error => {
+              console.warn('No se pudo sincronizar el perfil público; se usarán los datos locales:', error);
+            })
             .then(() => loadPublishedVideos().catch(error => {
               showToast(`No se pudo actualizar la lista de videos: ${error.message || 'inténtalo de nuevo.'}`);
-            }))
-            .catch(error => {
-              showToast(`No se pudo actualizar tu perfil público: ${error.message || 'inténtalo de nuevo.'}`);
-            });
+            }));
         }
         const avatarUrl = user.user_metadata?.avatar_url;
         if (avatarUrl) {
@@ -878,6 +878,23 @@
       });
     }
 
+    async function loadSubscriberCount(channelId) {
+      try {
+        const { data, error } = await supabaseClient.rpc('contar_suscriptores', {
+          p_canal_id: channelId
+        });
+        if (error) {
+          console.warn(`No se pudo contar los suscriptores del canal ${channelId}:`, error);
+          return 0;
+        }
+        const count = Number(data);
+        return Number.isFinite(count) && count >= 0 ? count : 0;
+      } catch (error) {
+        console.warn(`No se pudo contar los suscriptores del canal ${channelId}:`, error);
+        return 0;
+      }
+    }
+
     function createSubscribeButton(channelId, className = '') {
       const button = document.createElement('button');
       button.type = 'button';
@@ -940,86 +957,138 @@
       const emptyMessage = document.getElementById('channelProfileEmpty');
       emptyMessage.textContent = 'Cargando el contenido del canal…';
       emptyMessage.classList.remove('hidden');
-      if (!supabaseClient) {
-        document.getElementById('channelProfileEmpty').textContent = 'El perfil del canal no está disponible sin conexión a Supabase.';
-        document.getElementById('channelProfileEmpty').classList.remove('hidden');
-        return;
-      }
+      const localUser = currentUser?.id === channelId ? currentUser : null;
+      const metadata = localUser?.user_metadata || {};
+      const fallbackProfile = channelProfiles.get(channelId) || {
+        display_name: metadata.full_name || metadata.name || localUser?.email?.split('@')[0] || `Canal · ${channelId.slice(0, 8)}`,
+        avatar_url: metadata.avatar_url || metadata.picture || null,
+        description: metadata.description || metadata.bio || ''
+      };
+      let profile = fallbackProfile;
+      let videos = [];
+      let clips = [];
+      let subscriberCount = 0;
+      const renderProfileSummary = () => {
+        const channelName = profile?.display_name || `Canal · ${channelId.slice(0, 8)}`;
+        const avatarUrl = profile?.avatar_url || null;
+        const avatar = document.getElementById('channelProfileAvatar');
+        const initials = document.getElementById('channelProfileInitials');
+        document.getElementById('channelProfileTitle').textContent = channelName;
+        document.getElementById('channelProfileDescription').textContent = profile?.description || 'Este canal todavía no ha añadido una descripción.';
+        document.getElementById('channelProfileVideoCount').textContent = String(videos.length);
+        document.getElementById('channelProfileClipCount').textContent = String(clips.length);
+        const initialLetters = channelName.trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0] || '').join('').toUpperCase() || 'C';
+        initials.textContent = initialLetters;
+        initials.classList.toggle('hidden', Boolean(avatarUrl));
+        avatar.classList.toggle('hidden', !avatarUrl);
+        if (avatarUrl) {
+          avatar.src = avatarUrl;
+          avatar.referrerPolicy = 'no-referrer';
+        } else {
+          avatar.removeAttribute('src');
+        }
+        subscriberCounts.set(channelId, subscriberCount);
+        channelProfileModal.querySelector('[data-subscriber-count]').dataset.subscriberCount = channelId;
+        updateChannelControls(channelId);
+      };
 
-      const [
-        { data: profile, error: profileError },
-        { data: videos, error: videosError },
-        { data: clips, error: clipsError },
-        { data: subscriberCount, error: countError }
-      ] = await Promise.all([
-        supabaseClient.from('channel_profiles').select('display_name, avatar_url, description').eq('user_id', channelId).maybeSingle(),
-        supabaseClient.from('videos').select('id, title, description, video_path, created_at')
-          .eq('user_id', channelId).eq('visibility', 'public').order('created_at', { ascending: false }),
-        supabaseClient.from('media_clips').select('id, title, clip_url, video_id, created_at')
-          .eq('user_id', channelId).eq('status', 'ready').order('created_at', { ascending: false }),
-        supabaseClient.rpc('contar_suscriptores', { p_canal_id: channelId })
-      ]);
-      if (loadVersion !== channelProfileLoadVersion) return;
-      const failedResult = profileError || videosError || clipsError || countError;
-      if (failedResult) throw new Error(`No se pudo cargar el perfil del canal: ${failedResult.message}`);
-
-      const channelName = profile?.display_name || `Canal · ${channelId.slice(0, 8)}`;
-      const avatar = document.getElementById('channelProfileAvatar');
-      const initials = document.getElementById('channelProfileInitials');
-      document.getElementById('channelProfileTitle').textContent = channelName;
-      document.getElementById('channelProfileDescription').textContent = profile?.description || 'Este canal todavía no ha añadido una descripción.';
-      document.getElementById('channelProfileVideoCount').textContent = String(videos.length);
-      document.getElementById('channelProfileClipCount').textContent = String(clips.length);
-      const initialLetters = channelName.trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0] || '').join('').toUpperCase() || 'C';
-      initials.textContent = initialLetters;
-      initials.classList.toggle('hidden', Boolean(profile?.avatar_url));
-      avatar.classList.toggle('hidden', !profile?.avatar_url);
-      if (profile?.avatar_url) {
-        avatar.src = profile.avatar_url;
-        avatar.referrerPolicy = 'no-referrer';
-      } else {
-        avatar.removeAttribute('src');
+      try {
+        if (supabaseClient) {
+          const [
+            profileResult,
+            videosResult,
+            clipsResult
+          ] = await Promise.all([
+            supabaseClient.from('channel_profiles').select('display_name, avatar_url, description').eq('user_id', channelId).maybeSingle(),
+            supabaseClient.from('videos').select('id, title, description, video_path, created_at')
+              .eq('user_id', channelId).eq('visibility', 'public').order('created_at', { ascending: false }),
+            supabaseClient.from('media_clips').select('id, title, clip_url, video_id, created_at')
+              .eq('user_id', channelId).eq('status', 'ready').order('created_at', { ascending: false })
+          ]);
+          if (loadVersion !== channelProfileLoadVersion) return;
+          if (profileResult.error) {
+            console.warn('No se pudo cargar el perfil del canal desde Supabase:', profileResult.error);
+          } else if (profileResult.data) {
+            profile = {
+              ...fallbackProfile,
+              ...profileResult.data,
+              display_name: profileResult.data.display_name || fallbackProfile.display_name,
+              avatar_url: profileResult.data.avatar_url || fallbackProfile.avatar_url,
+              description: profileResult.data.description || fallbackProfile.description
+            };
+            channelProfiles.set(channelId, profile);
+          }
+          if (videosResult.error) {
+            console.warn('No se pudieron cargar los videos del canal desde Supabase:', videosResult.error);
+          } else {
+            videos = Array.isArray(videosResult.data) ? videosResult.data.filter(Boolean) : [];
+          }
+          if (clipsResult.error) {
+            console.warn('No se pudieron cargar los clips del canal desde Supabase:', clipsResult.error);
+          } else {
+            clips = Array.isArray(clipsResult.data) ? clipsResult.data.filter(Boolean) : [];
+          }
+          subscriberCount = await loadSubscriberCount(channelId);
+        }
+        if (loadVersion !== channelProfileLoadVersion) return;
+        renderProfileSummary();
+        videos.forEach(video => {
+          const title = video.title || 'Video sin título';
+          const card = document.createElement('article');
+          card.className = 'overflow-hidden rounded-xl border border-line bg-ink';
+          const play = document.createElement('button');
+          play.type = 'button';
+          play.className = 'w-full bg-gradient-to-br from-sky-950 to-emerald-900 px-4 py-8 text-left text-sm font-semibold text-white hover:from-sky-900';
+          play.dataset.profileVideoPath = video.video_path || '';
+          play.dataset.profileVideoTitle = title;
+          play.textContent = `▶ ${title}`;
+          const description = document.createElement('p');
+          description.className = 'px-4 py-3 text-xs text-zinc-400';
+          description.textContent = video.description || 'Video publicado en este canal.';
+          card.append(play, description);
+          videosPanel.append(card);
+        });
+        for (const clip of clips) {
+          if (!clip.clip_url) continue;
+          try {
+            const { data, error } = await supabaseClient.storage.from(mediaBucket).createSignedUrl(clip.clip_url, 3600);
+            if (error || !data?.signedUrl) {
+              console.warn(`No se pudo preparar el clip "${clip.title || 'sin título'}":`, error);
+              continue;
+            }
+            const card = document.createElement('article');
+            card.className = 'overflow-hidden rounded-xl border border-line bg-ink p-3';
+            const video = document.createElement('video');
+            video.className = 'mx-auto max-h-80 rounded-lg bg-black';
+            video.controls = true;
+            video.playsInline = true;
+            video.preload = 'metadata';
+            video.setAttribute('aria-label', clip.title || 'Clip del canal');
+            video.src = data.signedUrl;
+            const title = document.createElement('p');
+            title.className = 'mt-3 truncate text-sm font-semibold text-white';
+            title.textContent = clip.title || 'Clip sin título';
+            card.append(video, title);
+            clipsPanel.append(card);
+          } catch (error) {
+            console.warn(`No se pudo preparar el clip "${clip.title || 'sin título'}":`, error);
+          }
+        }
+        setChannelProfileTab('videos');
+        renderProfileSummary();
+        lucide.createIcons();
+      } catch (error) {
+        console.warn('No se pudo cargar el perfil del canal; se mostrarán los datos locales disponibles:', error);
+        if (loadVersion !== channelProfileLoadVersion) return;
+        profile = fallbackProfile;
+        videos = [];
+        clips = [];
+        subscriberCount = 0;
+        videosPanel.replaceChildren();
+        clipsPanel.replaceChildren();
+        renderProfileSummary();
+        setChannelProfileTab('videos');
       }
-      subscriberCounts.set(channelId, Number(subscriberCount) || 0);
-      channelProfileModal.querySelector('[data-subscriber-count]').dataset.subscriberCount = channelId;
-      updateChannelControls(channelId);
-      videos.forEach(video => {
-        const card = document.createElement('article');
-        card.className = 'overflow-hidden rounded-xl border border-line bg-ink';
-        const play = document.createElement('button');
-        play.type = 'button';
-        play.className = 'w-full bg-gradient-to-br from-sky-950 to-emerald-900 px-4 py-8 text-left text-sm font-semibold text-white hover:from-sky-900';
-        play.dataset.profileVideoPath = video.video_path;
-        play.dataset.profileVideoTitle = video.title;
-        play.textContent = `▶ ${video.title}`;
-        const description = document.createElement('p');
-        description.className = 'px-4 py-3 text-xs text-zinc-400';
-        description.textContent = video.description || 'Video publicado en este canal.';
-        card.append(play, description);
-        videosPanel.append(card);
-      });
-      for (const clip of clips) {
-        const card = document.createElement('article');
-        card.className = 'overflow-hidden rounded-xl border border-line bg-ink p-3';
-        const video = document.createElement('video');
-        video.className = 'mx-auto max-h-80 rounded-lg bg-black';
-        video.controls = true;
-        video.playsInline = true;
-        video.preload = 'metadata';
-        video.setAttribute('aria-label', clip.title);
-        const title = document.createElement('p');
-        title.className = 'mt-3 truncate text-sm font-semibold text-white';
-        title.textContent = clip.title;
-        const { data, error } = await supabaseClient.storage.from(mediaBucket).createSignedUrl(clip.clip_url, 3600);
-        if (error) throw new Error(`No se pudo preparar el clip "${clip.title}": ${error.message}`);
-        video.src = data.signedUrl;
-        card.append(video, title);
-        clipsPanel.append(card);
-      }
-      setChannelProfileTab('videos');
-      document.getElementById('channelProfileVideoCount').textContent = String(videos.length);
-      document.getElementById('channelProfileClipCount').textContent = String(clips.length);
-      lucide.createIcons();
     }
 
     function openChannelProfile(channelId) {
@@ -1034,7 +1103,9 @@
       channelProfileModal.classList.remove('hidden');
       channelProfileModal.classList.add('flex');
       updateChannelControls(channelId);
-      loadChannelProfile(channelId).catch(error => showToast(error.message || 'No se pudo cargar el perfil del canal.'));
+      loadChannelProfile(channelId).catch(error => {
+        console.warn('No se pudo mostrar el perfil del canal:', error);
+      });
       lucide.createIcons();
     }
 
@@ -1067,29 +1138,42 @@
 
     async function loadPublishedVideos() {
       if (!supabaseClient) return;
-      const { data: videos, error } = await supabaseClient
-        .from('videos')
-        .select('id, user_id, title, description, video_path, created_at')
-        .eq('visibility', 'public')
-        .order('created_at', { ascending: false });
-      if (error) throw new Error(`No se pudieron cargar los videos públicos: ${error.message}`);
+      let videos = [];
+      try {
+        const { data, error } = await supabaseClient
+          .from('videos')
+          .select('id, user_id, title, description, video_path, created_at')
+          .eq('visibility', 'public')
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.warn('No se pudieron cargar los videos públicos desde Supabase:', error);
+        } else {
+          videos = Array.isArray(data) ? data.filter(Boolean) : [];
+        }
+      } catch (error) {
+        console.warn('No se pudieron cargar los videos públicos desde Supabase:', error);
+      }
 
-      const channelIds = [...new Set(videos.map(video => video.user_id))];
-      const counts = await Promise.all(channelIds.map(async channelId => {
-        const { data, error: countError } = await supabaseClient.rpc('contar_suscriptores', {
-          p_canal_id: channelId
-        });
-        if (countError) throw new Error(`No se pudo contar los suscriptores del canal: ${countError.message}`);
-        const count = Number(data);
-        if (!Number.isFinite(count)) throw new Error('El conteo de suscriptores recibido no es válido.');
-        return [channelId, count];
-      }));
+      const channelIds = [...new Set(videos.map(video => video.user_id).filter(Boolean))];
+      const counts = await Promise.all(channelIds.map(async channelId => [
+        channelId,
+        await loadSubscriberCount(channelId)
+      ]));
       counts.forEach(([channelId, count]) => subscriberCounts.set(channelId, count));
-      const { data: profiles, error: profilesError } = channelIds.length
-        ? await supabaseClient.from('channel_profiles').select('user_id, display_name, avatar_url').in('user_id', channelIds)
-        : { data: [], error: null };
-      if (profilesError) throw new Error(`No se pudieron cargar los perfiles de los canales: ${profilesError.message}`);
-      profiles?.forEach(profile => channelProfiles.set(profile.user_id, profile));
+      try {
+        const { data, error } = channelIds.length
+          ? await supabaseClient.from('channel_profiles').select('user_id, display_name, avatar_url').in('user_id', channelIds)
+          : { data: [], error: null };
+        if (error) {
+          console.warn('No se pudieron cargar los perfiles de los canales desde Supabase:', error);
+        } else if (Array.isArray(data)) {
+          data.forEach(profile => {
+            if (profile?.user_id) channelProfiles.set(profile.user_id, profile);
+          });
+        }
+      } catch (error) {
+        console.warn('No se pudieron cargar los perfiles de los canales desde Supabase:', error);
+      }
 
       videoGrid.querySelectorAll('[data-database-video]').forEach(card => card.remove());
       const fragment = document.createDocumentFragment();
@@ -1099,14 +1183,16 @@
         card.dataset.databaseVideo = '';
         card.dataset.category = 'comunidad';
         const profile = channelProfiles.get(video.user_id);
-        const channelName = profile?.display_name || `Canal · ${video.user_id.slice(0, 8)}`;
-        card.dataset.search = `${video.title} ${video.description} ${channelName}`.toLocaleLowerCase('es');
+        const channelName = profile?.display_name || `Canal · ${(video.user_id || '').slice(0, 8)}`;
+        const videoTitle = video.title || 'Video sin título';
+        const videoDescription = video.description || '';
+        card.dataset.search = `${videoTitle} ${videoDescription} ${channelName}`.toLocaleLowerCase('es');
 
         const launch = document.createElement('button');
         launch.type = 'button';
         launch.className = 'video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-950 to-emerald-900 text-left';
-        launch.dataset.videoPath = video.video_path;
-        launch.setAttribute('aria-label', `Reproducir ${video.title}`);
+        launch.dataset.videoPath = video.video_path || '';
+        launch.setAttribute('aria-label', `Reproducir ${videoTitle}`);
         const play = document.createElement('span');
         play.className = 'play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100';
         play.innerHTML = '<i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i>';
@@ -1116,10 +1202,10 @@
         details.className = 'mt-3 flex flex-wrap items-center justify-between gap-2';
         const title = document.createElement('h3');
         title.className = 'min-w-0 flex-1 truncate text-sm font-semibold text-white';
-        title.textContent = video.title;
+        title.textContent = videoTitle;
         const profileButton = document.createElement('button');
         profileButton.type = 'button';
-        profileButton.dataset.channelProfile = video.user_id;
+        profileButton.dataset.channelProfile = video.user_id || '';
         profileButton.className = 'inline-flex min-w-0 items-center gap-2 text-xs text-zinc-400 transition hover:text-white';
         if (profile?.avatar_url) {
           const profileAvatar = document.createElement('img');
@@ -1144,12 +1230,12 @@
         footer.className = 'mt-3 flex flex-wrap items-center justify-between gap-2';
         const countLabel = document.createElement('span');
         countLabel.className = 'text-xs text-zinc-500';
-        countLabel.dataset.subscriberCount = video.user_id;
+        countLabel.dataset.subscriberCount = video.user_id || '';
         countLabel.textContent = String(subscriberCounts.get(video.user_id) || 0);
         const countText = document.createElement('span');
         countText.className = 'mr-auto text-xs text-zinc-500';
         countText.textContent = 'suscriptores';
-        footer.append(countLabel, countText, createSubscribeButton(video.user_id));
+        footer.append(countLabel, countText, createSubscribeButton(video.user_id || ''));
 
         card.append(launch, details, footer);
         fragment.append(card);
