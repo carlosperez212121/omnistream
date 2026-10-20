@@ -1294,6 +1294,8 @@
 
         const { data, error: urlError } = await supabaseClient.storage.from(videosBucket).createSignedUrl(path, 3600);
         if (urlError) throw new Error(`No se pudo preparar el video: ${urlError.message}`);
+        const { data: publicUrlData } = supabaseClient.storage.from(videosBucket).getPublicUrl(path);
+        const publicVideoUrl = publicUrlData.publicUrl;
 
         let insertResult;
         try {
@@ -1301,6 +1303,7 @@
             titulo: title,
             descripcion: description,
             video_path: path,
+            url_video: publicVideoUrl,
             usuario_id: userId
           });
         } catch (insertError) {
