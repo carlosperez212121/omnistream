@@ -195,6 +195,26 @@
         </button>
         <input id="uploadVideoInput" class="hidden" type="file" accept="video/*">
       </div>
+      <form id="videoUploadForm" class="mt-6 hidden max-w-2xl space-y-4 rounded-2xl border border-line bg-panel p-5 sm:p-6" aria-label="Detalles del video">
+        <p id="selectedVideoName" class="text-sm text-zinc-400"></p>
+        <label class="block text-xs font-medium text-zinc-300">Título
+          <input id="videoTitle" type="text" maxlength="150" required class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="Título del video">
+        </label>
+        <label class="block text-xs font-medium text-zinc-300">Descripción
+          <textarea id="videoDescription" rows="3" maxlength="5000" class="mt-2 w-full resize-y rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="Cuéntanos de qué trata tu video"></textarea>
+        </label>
+        <label class="block text-xs font-medium text-zinc-300">Visibilidad
+          <select id="videoVisibility" required class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none focus:border-ember/60">
+            <option value="public">Público</option>
+            <option value="private">Privado</option>
+            <option value="link">Con enlace</option>
+          </select>
+        </label>
+        <div class="flex flex-wrap gap-3">
+          <button id="submitVideoUpload" type="submit" class="rounded-full bg-ember px-5 py-3 text-sm font-bold text-ink transition hover:bg-orange-300">Subir video</button>
+          <button id="cancelVideoUpload" type="button" class="rounded-full border border-line px-5 py-3 text-sm font-semibold text-zinc-300 transition hover:bg-white/5">Cancelar</button>
+        </div>
+      </form>
       <div class="mt-6 flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar videos">
         <button class="filter-chip rounded-full bg-white px-4 py-2 text-xs font-bold text-ink" data-filter="all">Para ti</button>
         <button class="filter-chip rounded-full border border-line bg-panel px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white" data-filter="música">Música</button>
@@ -433,6 +453,7 @@
       })
       : null;
     const mediaBucket = 'user-media';
+    const videosBucket = 'videos';
     const localUsersStorageKey = 'omnistream.localUsers';
     const localSessionStorageKey = 'omnistream.localSession';
     const localPasswordIterations = 210000;
@@ -916,40 +937,108 @@
     }
 
     const uploadVideoInput = document.getElementById('uploadVideoInput');
-    document.getElementById('uploadVideoButton').addEventListener('click', () => {
+    const videoUploadForm = document.getElementById('videoUploadForm');
+    const videoTitle = document.getElementById('videoTitle');
+    const videoDescription = document.getElementById('videoDescription');
+    const videoVisibility = document.getElementById('videoVisibility');
+    const submitVideoUpload = document.getElementById('submitVideoUpload');
+    const cancelVideoUpload = document.getElementById('cancelVideoUpload');
+    const uploadVideoButton = document.getElementById('uploadVideoButton');
+    let selectedVideoFile = null;
+    uploadVideoButton.addEventListener('click', () => {
       if (!requireUser() || !ensureSupabase()) return;
       uploadVideoInput.click();
     });
-    uploadVideoInput.addEventListener('change', async () => {
+    uploadVideoInput.addEventListener('change', () => {
       const file = uploadVideoInput.files?.[0];
       uploadVideoInput.value = '';
-      if (!file || !currentUser || !ensureSupabase()) return;
+      if (!file) return;
       if (!file.type.startsWith('video/')) {
+        selectedVideoFile = null;
+        videoUploadForm.reset();
+        videoUploadForm.classList.add('hidden');
         showToast('Selecciona un archivo de video válido.');
         return;
       }
+      selectedVideoFile = file;
+      document.getElementById('selectedVideoName').textContent = file.name;
+      videoTitle.value = file.name.replace(/\.[^.]+$/, '');
+      videoDescription.value = '';
+      videoVisibility.value = 'public';
+      videoUploadForm.classList.remove('hidden');
+      videoTitle.focus();
+    });
+    cancelVideoUpload.addEventListener('click', () => {
+      selectedVideoFile = null;
+      videoUploadForm.reset();
+      videoUploadForm.classList.add('hidden');
+    });
+    videoUploadForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!selectedVideoFile || !currentUser || !ensureSupabase()) return;
+      const title = videoTitle.value.trim();
+      if (!title) {
+        videoTitle.focus();
+        return;
+      }
+      const file = selectedVideoFile;
+      const userId = currentUser.id;
+      const description = videoDescription.value.trim();
+      const visibility = videoVisibility.value;
       const extension = file.name.split('.').pop()?.toLowerCase() || 'mp4';
-      const path = `${currentUser.id}/videos/${crypto.randomUUID()}.${extension}`;
-      showToast('Subiendo video a tu cuenta…');
-      const { error: uploadError } = await supabaseClient.storage.from(mediaBucket).upload(path, file, {
-        contentType: file.type,
-        upsert: false
-      });
-      if (uploadError) {
-        showToast(`No se pudo subir el video: ${uploadError.message}`);
-        return;
+      const path = `${userId}/videos/${crypto.randomUUID()}.${extension}`;
+      uploadVideoButton.disabled = true;
+      submitVideoUpload.disabled = true;
+      cancelVideoUpload.disabled = true;
+      showToast('Subiendo video…');
+      let uploaded = false;
+      let saved = false;
+      try {
+        const { error: uploadError } = await supabaseClient.storage.from(videosBucket).upload(path, file, {
+          contentType: file.type,
+          upsert: false
+        });
+        if (uploadError) throw new Error(`No se pudo subir el video: ${uploadError.message}`);
+        uploaded = true;
+
+        const { data, error: urlError } = await supabaseClient.storage.from(videosBucket).createSignedUrl(path, 3600);
+        if (urlError) throw new Error(`No se pudo preparar el video: ${urlError.message}`);
+
+        const { error: insertError } = await supabaseClient.from('videos').insert({
+          user_id: userId,
+          title,
+          description,
+          visibility,
+          video_path: path
+        });
+        if (insertError) throw new Error(`No se pudieron guardar los datos del video: ${insertError.message}`);
+        saved = true;
+
+        uploadedVideoPath = path;
+        clipVideo.src = data.signedUrl;
+        clipVideo.load();
+        document.getElementById('clipper').classList.remove('hidden');
+        selectedVideoFile = null;
+        videoUploadForm.reset();
+        videoUploadForm.classList.add('hidden');
+        showToast('Video subido y guardado correctamente. Ya puedes crear un clip.');
+        document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (error) {
+        let message = error.message || 'No se pudo subir el video.';
+        if (uploaded && !saved) {
+          try {
+            const { error: cleanupError } = await supabaseClient.storage.from(videosBucket).remove([path]);
+            if (cleanupError) message += ` No se pudo limpiar el archivo subido: ${cleanupError.message}`;
+          } catch (cleanupError) {
+            message += ` No se pudo limpiar el archivo subido: ${cleanupError.message || 'error desconocido.'}`;
+          }
+        }
+        showToast(message);
+      } finally {
+        uploadVideoButton.disabled = false;
+        submitVideoUpload.disabled = false;
+        cancelVideoUpload.disabled = false;
       }
-      const { data, error: urlError } = await supabaseClient.storage.from(mediaBucket).createSignedUrl(path, 3600);
-      if (urlError) {
-        showToast(`El video se subió, pero no se pudo abrir: ${urlError.message}`);
-        return;
-      }
-      uploadedVideoPath = path;
-      clipVideo.src = data.signedUrl;
-      clipVideo.load();
-      document.getElementById('clipper').classList.remove('hidden');
-      showToast('Video guardado en tu cuenta. Ya puedes crear un clip.');
-      document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     const clipVideo = document.getElementById('clipVideo');

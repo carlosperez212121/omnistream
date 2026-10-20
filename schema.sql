@@ -68,4 +68,69 @@ create policy "Users can delete their own media"
     bucket_id = 'user-media'
     and (storage.foldername(name))[1] = (select auth.uid()::text)
   );
+
+-- Store uploaded video metadata separately from the media-clips table.
+create table if not exists public.videos (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  description text not null default '',
+  visibility text not null default 'public'
+    check (visibility in ('public', 'private', 'link')),
+  video_path text not null unique,
+  created_at timestamptz not null default timezone('utc'::text, now())
+);
+
+alter table public.videos enable row level security;
+
+drop policy if exists "Anyone can read public videos" on public.videos;
+create policy "Anyone can read public videos"
+  on public.videos for select to anon, authenticated
+  using (visibility = 'public');
+
+drop policy if exists "Users can read their own videos" on public.videos;
+create policy "Users can read their own videos"
+  on public.videos for select to authenticated
+  using (user_id = (select auth.uid()));
+
+drop policy if exists "Users can upload their own videos" on public.videos;
+create policy "Users can upload their own videos"
+  on public.videos for insert to authenticated
+  with check (user_id = (select auth.uid()));
+
+insert into storage.buckets (id, name, public)
+values ('videos', 'videos', false)
+on conflict (id) do update set public = false;
+
+drop policy if exists "Users can upload to their own videos folder" on storage.objects;
+create policy "Users can upload to their own videos folder"
+  on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'videos'
+    and (storage.foldername(name))[1] = (select auth.uid()::text)
+  );
+
+drop policy if exists "Users can read their own videos and public videos" on storage.objects;
+create policy "Users can read their own videos and public videos"
+  on storage.objects for select to anon, authenticated
+  using (
+    bucket_id = 'videos'
+    and (
+      (storage.foldername(name))[1] = (select auth.uid()::text)
+      or exists (
+        select 1
+        from public.videos
+        where video_path = storage.objects.name
+          and visibility = 'public'
+      )
+    )
+  );
+
+drop policy if exists "Users can delete their own videos" on storage.objects;
+create policy "Users can delete their own videos"
+  on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'videos'
+    and (storage.foldername(name))[1] = (select auth.uid()::text)
+  );
                                   
