@@ -263,7 +263,10 @@
     <section id="clipper" aria-labelledby="clipper-title" class="hidden overflow-hidden rounded-[28px] border border-ember/20 bg-gradient-to-br from-[#1c1518] via-panel to-panel">
       <div class="grid lg:grid-cols-[1fr_.9fr]">
         <div class="p-6 sm:p-9 lg:p-11">
-          <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-ember/20 bg-ember/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-ember"><i data-lucide="scissors" class="h-3.5 w-3.5"></i> Herramienta para creadores</div>
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="inline-flex items-center gap-2 rounded-full border border-ember/20 bg-ember/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-ember"><i data-lucide="scissors" class="h-3.5 w-3.5"></i> Herramienta para creadores</div>
+            <button id="skipClipper" type="button" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-ink transition hover:bg-zinc-200 sm:text-sm"><i data-lucide="circle-user-round" class="h-4 w-4"></i> Omitir y ver en mi Canal</button>
+          </div>
           <h2 id="clipper-title" class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Clipper Studio <span class="text-ember">9:16</span></h2>
           <p class="mt-3 max-w-lg text-sm leading-6 text-zinc-400">Guarda el momento que te encantó. Ajusta el fragmento, prepara el formato vertical y compártelo con la comunidad.</p>
 
@@ -288,7 +291,7 @@
 
           <div class="mt-7 rounded-2xl border border-line bg-ink/70 p-4 sm:p-5">
             <div class="flex items-center justify-between gap-3"><label for="clipRange" class="text-xs font-semibold text-white">Selecciona el momento</label><span id="clipDuration" class="rounded-full bg-ember/10 px-2.5 py-1 text-[10px] font-bold text-ember">20 segundos</span></div>
-            <input id="clipRange" class="range-track mt-5 h-1.5 w-full cursor-pointer" type="range" min="0" max="0" step="0.1" value="0" aria-label="Punto de inicio del clip">
+            <input id="clipRange" class="range-track mt-5 h-1.5 w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50" type="range" min="0" max="0" step="0.1" value="0" aria-label="Punto de inicio del clip">
             <div class="mt-2 flex justify-between font-mono text-[10px] text-zinc-500"><span>00:00</span><span id="clipStart">00:00</span><span id="clipEnd">00:20</span><span id="clipTotal">--:--</span></div>
             <label for="clipCaption" class="sr-only">Texto para acompañar el clip</label>
             <input id="clipCaption" type="text" maxlength="120" value="Un instante que merece volver a verse ✨" class="mt-5 w-full rounded-xl border border-line bg-panel px-3.5 py-3 text-xs text-zinc-200 outline-none placeholder:text-zinc-500 focus:border-ember/50">
@@ -1587,6 +1590,15 @@
       document.getElementById('clipper').classList.remove('hidden');
       document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+    document.getElementById('skipClipper').addEventListener('click', () => {
+      document.getElementById('clipper').classList.add('hidden');
+      if (currentUser && uuidPattern.test(currentUser.id)) {
+        openChannelProfile(currentUser.id);
+      } else {
+        activateTab('videos');
+        document.getElementById('videosPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
     document.getElementById('skipClipOffer').addEventListener('click', () => {
       closeClipOffer();
       document.getElementById('clipper').classList.add('hidden');
@@ -1620,12 +1632,19 @@
     };
     function updateClip() {
       const duration = Number.isFinite(clipVideo.duration) ? clipVideo.duration : 0;
-      const currentTime = Math.min(clipVideo.currentTime || 0, duration || 0);
+      const isShortVideo = duration > 0 && duration < 15;
+      const clipStart = isShortVideo ? 0 : Math.min(clipVideo.currentTime || 0, duration || 0);
+      const selectedLength = Math.min(clipLength, duration || clipLength);
+      const clipEnd = isShortVideo ? duration : Math.min(clipStart + selectedLength, duration || clipStart + selectedLength);
       clipRange.max = String(duration);
-      clipRange.value = String(currentTime);
-      document.getElementById('clipTime').textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-      document.getElementById('clipStart').textContent = formatTime(currentTime);
-      document.getElementById('clipEnd').textContent = formatTime(Math.min(currentTime + clipLength, duration || currentTime + clipLength));
+      clipRange.value = String(clipStart);
+      clipRange.disabled = isShortVideo;
+      document.getElementById('clipDuration').textContent = isShortVideo
+        ? `Video completo · ${Math.ceil(duration)} s`
+        : `${Math.ceil(selectedLength)} segundos`;
+      document.getElementById('clipTime').textContent = `${formatTime(clipVideo.currentTime || 0)} / ${formatTime(duration)}`;
+      document.getElementById('clipStart').textContent = formatTime(clipStart);
+      document.getElementById('clipEnd').textContent = formatTime(clipEnd);
       document.getElementById('clipTotal').textContent = formatTime(duration);
     }
     clipVideo.addEventListener('loadedmetadata', updateClip);
@@ -1696,10 +1715,15 @@
     document.getElementById('shareClip').addEventListener('click', async () => {
       if (!requireUser() || !ensureSupabase()) return;
       const duration = clipVideo.duration;
-      const startTime = Number(clipRange.value);
-      const endTime = Math.min(startTime + clipLength, duration);
-      if (!Number.isFinite(duration) || endTime - startTime < 15) {
-        showToast('Espera a que cargue un video de al menos 15 segundos y selecciona un tramo válido.');
+      if (!Number.isFinite(duration) || duration <= 0) {
+        showToast('Espera a que cargue el video antes de crear el clip.');
+        return;
+      }
+      const isShortVideo = duration < 15;
+      const startTime = isShortVideo ? 0 : Number(clipRange.value);
+      const endTime = isShortVideo ? duration : Math.min(startTime + clipLength, duration);
+      if (!isShortVideo && endTime - startTime < 15) {
+        showToast('Selecciona un tramo de al menos 15 segundos.');
         return;
       }
       let sourceUrl = clipVideo.currentSrc;
