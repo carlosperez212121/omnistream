@@ -878,12 +878,12 @@
       if (!supabaseClient) return;
       const { data: videos, error } = await supabaseClient
         .from('videos')
-        .select('id, user_id, title, description, video_path, created_at')
+        .select('id, usuario_id, title, description, video_path, created_at')
         .eq('visibility', 'public')
         .order('created_at', { ascending: false });
       if (error) throw new Error(`No se pudieron cargar los videos públicos: ${error.message}`);
 
-      const channelIds = [...new Set(videos.map(video => video.user_id))];
+      const channelIds = [...new Set(videos.map(video => video.usuario_id))];
       const counts = await Promise.all(channelIds.map(async channelId => {
         const { data, error: countError } = await supabaseClient.rpc('contar_suscriptores', {
           p_canal_id: channelId
@@ -910,7 +910,7 @@
         card.className = 'community-card group';
         card.dataset.databaseVideo = '';
         card.dataset.category = 'comunidad';
-        card.dataset.search = `${video.title} ${video.description} ${video.user_id}`.toLocaleLowerCase('es');
+        card.dataset.search = `${video.title} ${video.description} ${video.usuario_id}`.toLocaleLowerCase('es');
 
         const launch = document.createElement('button');
         launch.type = 'button';
@@ -929,21 +929,21 @@
         title.textContent = video.title;
         const profileButton = document.createElement('button');
         profileButton.type = 'button';
-        profileButton.dataset.channelProfile = video.user_id;
+        profileButton.dataset.channelProfile = video.usuario_id;
         profileButton.className = 'text-xs text-zinc-400 transition hover:text-white';
-        profileButton.textContent = `Canal · ${video.user_id.slice(0, 8)}`;
+        profileButton.textContent = `Canal · ${video.usuario_id.slice(0, 8)}`;
         details.append(title, profileButton);
 
         const footer = document.createElement('div');
         footer.className = 'mt-3 flex flex-wrap items-center justify-between gap-2';
         const countLabel = document.createElement('span');
         countLabel.className = 'text-xs text-zinc-500';
-        countLabel.dataset.subscriberCount = video.user_id;
-        countLabel.textContent = String(subscriberCounts.get(video.user_id) || 0);
+        countLabel.dataset.subscriberCount = video.usuario_id;
+        countLabel.textContent = String(subscriberCounts.get(video.usuario_id) || 0);
         const countText = document.createElement('span');
         countText.className = 'mr-auto text-xs text-zinc-500';
         countText.textContent = 'suscriptores';
-        footer.append(countLabel, countText, createSubscribeButton(video.user_id));
+        footer.append(countLabel, countText, createSubscribeButton(video.usuario_id));
 
         card.append(launch, details, footer);
         fragment.append(card);
