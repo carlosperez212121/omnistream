@@ -47,19 +47,19 @@
 <body class="min-h-screen bg-ink text-zinc-100 antialiased">
   <header class="sticky top-0 z-40 border-b border-line/80 bg-ink/90 backdrop-blur-xl">
     <div class="mx-auto flex h-[72px] max-w-[1440px] items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-10">
-      <a href="#inicio" class="flex shrink-0 items-center gap-3" aria-label="OmniStream, inicio">
+      <a href="#inicio" data-tab-target="videos" class="flex shrink-0 items-center gap-3" aria-label="OmniStream, inicio">
         <span class="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-ember to-amber-300 text-lg font-black text-ink shadow-lg shadow-ember/15">O</span>
         <span class="text-lg font-extrabold tracking-tight">omni<span class="text-ember">stream</span></span>
       </a>
 
       <nav class="hidden items-center gap-6 pl-6 text-sm font-medium text-zinc-400 md:flex" aria-label="Navegación principal">
-        <a class="transition hover:text-white" href="#originales">Originales</a>
-        <a class="transition hover:text-white" href="#comunidad">Comunidad</a>
+        <a class="transition hover:text-white" href="#originales" data-tab-target="vip">VIP</a>
+        <a class="transition hover:text-white" href="#comunidad" data-tab-target="videos">Videos</a>
         <details class="group relative">
           <summary class="flex cursor-pointer list-none items-center gap-1 transition hover:text-white">Emisora de Radio <i data-lucide="chevron-down" class="h-3.5 w-3.5 transition group-open:rotate-180"></i></summary>
           <div class="absolute left-0 top-full z-50 mt-3 grid min-w-48 gap-1 rounded-xl border border-line bg-panel p-2 shadow-xl">
-            <a class="rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white" href="#radio-listen">Escuchar emisora</a>
-            <a class="rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white" href="#radio-transmit">Panel de transmisión</a>
+            <a class="rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white" href="#radio-listen" data-tab-target="radio">Escuchar emisora</a>
+            <a class="rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white" href="#radio-transmit" data-tab-target="radio">Panel de transmisión</a>
           </div>
         </details>
       </nav>
@@ -70,7 +70,7 @@
           class="w-full rounded-full border border-line bg-panel py-2.5 pl-10 pr-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-ember/60 focus:ring-2 focus:ring-ember/10">
       </label>
 
-      <button class="ml-auto inline-flex items-center gap-2 rounded-full border border-gold/25 bg-gold/10 p-2.5 text-xs font-bold text-gold transition hover:bg-gold/15 sm:px-4 sm:py-2 sm:text-sm lg:ml-0" aria-label="Plan VIP">
+      <button data-tab-target="vip" class="ml-auto inline-flex items-center gap-2 rounded-full border border-gold/25 bg-gold/10 p-2.5 text-xs font-bold text-gold transition hover:bg-gold/15 sm:px-4 sm:py-2 sm:text-sm lg:ml-0" aria-label="Plan VIP">
         <i data-lucide="sparkles" class="h-4 w-4"></i><span class="hidden sm:inline">Plan VIP</span>
       </button>
       <button id="authButton" type="button" class="inline-flex shrink-0 items-center gap-2 rounded-full border border-line bg-panel px-3 py-2 text-xs font-semibold text-white transition hover:border-ember/50 sm:px-4 sm:text-sm" aria-label="Iniciar sesión o registrarse">
@@ -86,12 +86,12 @@
     </div>
     <nav id="mobileNav" class="hidden border-t border-line px-5 py-3 text-sm text-zinc-300 md:hidden" aria-label="Navegación móvil">
       <div class="flex flex-wrap gap-x-5 gap-y-3">
-        <a href="#originales">Originales</a><a href="#comunidad">Comunidad</a>
+        <a href="#originales" data-tab-target="vip">VIP</a><a href="#comunidad" data-tab-target="videos">Videos</a>
         <details class="basis-full">
           <summary class="flex cursor-pointer list-none items-center gap-1">Emisora de Radio <i data-lucide="chevron-down" class="h-3.5 w-3.5"></i></summary>
           <div class="mt-2 grid gap-2 border-l border-line pl-3">
-            <a href="#radio-listen">Escuchar emisora</a>
-            <a href="#radio-transmit">Panel de transmisión</a>
+            <a href="#radio-listen" data-tab-target="radio">Escuchar emisora</a>
+            <a href="#radio-transmit" data-tab-target="radio">Panel de transmisión</a>
           </div>
         </details>
       </div>
@@ -104,7 +104,7 @@
   </header>
 
   <main id="inicio" class="mx-auto max-w-[1440px] space-y-20 px-4 pb-32 pt-8 sm:px-6 sm:pt-10 lg:space-y-24 lg:px-10">
-    <section id="originales" aria-labelledby="originales-title">
+    <section id="originales" data-tab-panel="vip" role="tabpanel" aria-labelledby="vipTab" aria-hidden="true" class="hidden">
       <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div class="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.22em] text-gold">
@@ -182,6 +182,7 @@
       </div>
     </section>
 
+    <div id="videosPanel" data-tab-panel="videos" role="tabpanel" aria-labelledby="videosTab" aria-hidden="false" class="space-y-20">
     <section id="comunidad" aria-labelledby="community-title">
       <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -231,7 +232,7 @@
       <p id="emptyResults" class="mt-8 hidden rounded-2xl border border-line bg-panel p-6 text-center text-sm text-zinc-400">No encontramos videos o canales con esa búsqueda.</p>
     </section>
 
-    <section id="clipper" aria-labelledby="clipper-title" class="overflow-hidden rounded-[28px] border border-ember/20 bg-gradient-to-br from-[#1c1518] via-panel to-panel">
+    <section id="clipper" aria-labelledby="clipper-title" class="hidden overflow-hidden rounded-[28px] border border-ember/20 bg-gradient-to-br from-[#1c1518] via-panel to-panel">
       <div class="grid lg:grid-cols-[1fr_.9fr]">
         <div class="p-6 sm:p-9 lg:p-11">
           <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-ember/20 bg-ember/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-ember"><i data-lucide="scissors" class="h-3.5 w-3.5"></i> Herramienta para creadores</div>
@@ -280,12 +281,23 @@
         </div>
       </div>
     </section>
+    </div>
 
-    <section id="radio" aria-labelledby="radio-title" class="scroll-mt-24">
+    <section id="radio" data-tab-panel="radio" role="tabpanel" aria-labelledby="radioTab" aria-hidden="true" class="hidden scroll-mt-24">
       <div class="mb-6">
         <div class="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.22em] text-mint"><span class="h-1.5 w-1.5 rounded-full bg-mint"></span> Radio · solo audio</div>
         <h2 id="radio-title" class="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Emisora de Radio</h2>
         <p class="mt-2 text-sm text-zinc-400">Escucha la señal de audio o prueba una transmisión local desde tu micrófono.</p>
+      </div>
+      <div class="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-line bg-panel px-4 py-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <span class="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-900 to-teal-800 text-mint"><i data-lucide="radio" class="h-5 w-5"></i><span id="radioFooterIndicator" class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-panel bg-zinc-600"></span></span>
+          <div class="min-w-0"><div class="flex items-center gap-2"><span id="radioStatus" class="text-[9px] font-black uppercase tracking-widest text-zinc-500">En pausa</span><span class="h-1 w-1 rounded-full bg-zinc-600"></span><span id="radioDescription" class="truncate text-[10px] text-zinc-500">Música tranquila</span></div><p id="radioStation" class="truncate text-sm font-bold text-white">Frecuencia Serena</p></div>
+        </div>
+        <div class="flex shrink-0 items-center gap-3">
+          <span class="hidden text-[10px] text-zinc-600 sm:block">Audio de muestra</span>
+          <button id="radioToggle" aria-label="Reproducir audio" class="grid h-10 w-10 place-items-center rounded-full bg-white text-ink transition hover:scale-105"><i data-lucide="play" class="h-4 w-4 fill-current"></i></button>
+        </div>
       </div>
       <div class="grid gap-5 lg:grid-cols-2">
         <article id="radio-listen" class="scroll-mt-24 rounded-3xl border border-line bg-panel p-6 sm:p-8">
@@ -331,18 +343,19 @@
     </section>
   </main>
 
-  <footer class="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/95 backdrop-blur-xl">
-    <div class="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
-      <div class="flex min-w-0 items-center gap-3">
-      <span class="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-900 to-teal-800 text-mint"><i data-lucide="radio" class="h-5 w-5"></i><span id="radioFooterIndicator" class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-ink bg-zinc-600"></span></span>
-        <div class="min-w-0"><div class="flex items-center gap-2"><span id="radioStatus" class="text-[9px] font-black uppercase tracking-widest text-zinc-500">En pausa</span><span class="h-1 w-1 rounded-full bg-zinc-600"></span><span id="radioDescription" class="truncate text-[10px] text-zinc-500">Música tranquila</span></div><p id="radioStation" class="truncate text-sm font-bold text-white">Frecuencia Serena</p></div>
-      </div>
-      <div class="flex items-center gap-3 sm:gap-5">
-        <span class="hidden text-[10px] text-zinc-600 sm:block">Audio de muestra</span>
-        <button id="radioToggle" aria-label="Reproducir audio" class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-ink transition hover:scale-105"><i data-lucide="play" class="h-4 w-4 fill-current"></i></button>
-      </div>
+  <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl" aria-label="Navegación inferior" role="tablist">
+    <div class="mx-auto grid h-[68px] max-w-xl grid-cols-3 items-center px-3">
+      <button id="videosTab" type="button" role="tab" aria-selected="true" aria-controls="videosPanel" data-tab-target="videos" class="flex h-full flex-col items-center justify-center gap-1 text-ember transition" aria-label="Videos">
+        <i data-lucide="clapperboard" class="h-5 w-5"></i><span class="text-[11px] font-semibold">Videos</span>
+      </button>
+      <button id="radioTab" type="button" role="tab" aria-selected="false" aria-controls="radio" data-tab-target="radio" class="flex h-full flex-col items-center justify-center gap-1 text-zinc-500 transition hover:text-white" aria-label="Estación Radial">
+        <i data-lucide="radio" class="h-5 w-5"></i><span class="text-[11px] font-semibold">Estación Radial</span>
+      </button>
+      <button id="vipTab" type="button" role="tab" aria-selected="false" aria-controls="originales" data-tab-target="vip" class="flex h-full flex-col items-center justify-center gap-1 text-zinc-500 transition hover:text-white" aria-label="Sección VIP">
+        <i data-lucide="sparkles" class="h-5 w-5"></i><span class="text-[11px] font-semibold">VIP</span>
+      </button>
     </div>
-  </footer>
+  </nav>
 
   <div id="mainPlayerModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="mainPlayerTitle">
     <div class="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl">
@@ -431,6 +444,28 @@
     const emptyResults = document.getElementById('emptyResults');
     let activeFilter = 'all';
     let toastTimer;
+
+    function activateTab(tabName) {
+      document.querySelectorAll('[data-tab-panel]').forEach(panel => {
+        const active = panel.dataset.tabPanel === tabName;
+        panel.classList.toggle('hidden', !active);
+        panel.setAttribute('aria-hidden', String(!active));
+      });
+      document.querySelectorAll('[role="tab"][data-tab-target]').forEach(tab => {
+        const active = tab.dataset.tabTarget === tabName;
+        tab.setAttribute('aria-selected', String(active));
+        tab.classList.toggle('text-ember', active);
+        tab.classList.toggle('text-zinc-500', !active);
+      });
+    }
+
+    document.querySelectorAll('[data-tab-target]').forEach(control => {
+      control.addEventListener('click', event => {
+        if (control instanceof HTMLAnchorElement) event.preventDefault();
+        activateTab(control.dataset.tabTarget);
+        document.getElementById('mobileNav').classList.add('hidden');
+      });
+    });
 
     function filterVideos(query = '') {
       const term = query.trim().toLocaleLowerCase('es');
@@ -912,6 +947,7 @@
       uploadedVideoPath = path;
       clipVideo.src = data.signedUrl;
       clipVideo.load();
+      document.getElementById('clipper').classList.remove('hidden');
       showToast('Video guardado en tu cuenta. Ya puedes crear un clip.');
       document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
