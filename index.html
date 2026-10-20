@@ -405,12 +405,19 @@
   <script>
     lucide.createIcons();
 
-    // Set these public client values on window before this script in the hosting page.
-    const supabaseUrl = window.OMNISTREAM_SUPABASE_URL || '';
-    const supabaseAnonKey = window.OMNISTREAM_SUPABASE_ANON_KEY || '';
+    // Set the public anon key on window before this script in the hosting page.
+    const supabaseUrl = window.OMNISTREAM_SUPABASE_URL || 'https://thnrfbomvckokqoyoehq.supabase.co';
+    const supabaseAnonKey = window.OMNISTREAM_SUPABASE_ANON_KEY || 'sb_publishable_kpXaUYs7qNhPevC1lZh-CA_4RVDkn-f';
     const clipApiUrl = window.OMNISTREAM_CLIP_API_URL || '/api/clip/trim';
     const supabaseClient = supabaseUrl && supabaseAnonKey && window.supabase
-      ? window.supabase.createClient(supabaseUrl, supabaseAnonKey)
+      ? window.supabase.createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: window.localStorage
+        }
+      })
       : null;
     const mediaBucket = 'user-media';
     const localUsersStorageKey = 'omnistream.localUsers';
