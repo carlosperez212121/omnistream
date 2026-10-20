@@ -210,6 +210,13 @@
             <option value="link">Con enlace</option>
           </select>
         </label>
+        <div id="videoUploadProgressContainer" class="hidden space-y-2" aria-live="polite">
+          <div class="flex items-center justify-between text-xs text-zinc-400">
+            <span>Subiendo video</span>
+            <span id="videoUploadProgressPercent">0%</span>
+          </div>
+          <progress id="videoUploadProgress" class="h-2 w-full overflow-hidden rounded-full accent-ember" max="100" value="0" aria-label="Progreso de subida del video"></progress>
+        </div>
         <div class="flex flex-wrap gap-3">
           <button id="submitVideoUpload" type="submit" class="rounded-full bg-ember px-5 py-3 text-sm font-bold text-ink transition hover:bg-orange-300">Subir video</button>
           <button id="cancelVideoUpload" type="button" class="rounded-full border border-line px-5 py-3 text-sm font-semibold text-zinc-300 transition hover:bg-white/5">Cancelar</button>
@@ -1180,7 +1187,56 @@
     const submitVideoUpload = document.getElementById('submitVideoUpload');
     const cancelVideoUpload = document.getElementById('cancelVideoUpload');
     const uploadVideoButton = document.getElementById('uploadVideoButton');
+    const videoUploadProgressContainer = document.getElementById('videoUploadProgressContainer');
+    const videoUploadProgress = document.getElementById('videoUploadProgress');
+    const videoUploadProgressPercent = document.getElementById('videoUploadProgressPercent');
     let selectedVideoFile = null;
+    function setVideoUploadProgress(percent) {
+      const progress = Math.max(0, Math.min(100, Math.round(percent)));
+      videoUploadProgress.value = progress;
+      videoUploadProgressPercent.textContent = `${progress}%`;
+    }
+    function resetVideoUploadProgress() {
+      setVideoUploadProgress(0);
+      videoUploadProgressContainer.classList.add('hidden');
+    }
+    async function uploadVideoWithProgress(file, path, onProgress) {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw new Error(`No se pudo obtener la sesión para subir el video: ${error.message}`);
+      const accessToken = data.session?.access_token;
+      if (!accessToken) throw new Error('Tu sesión ha expirado. Inicia sesión e inténtalo de nuevo.');
+
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const encodedPath = path.split('/').map(segment => encodeURIComponent(segment)).join('/');
+        xhr.open('POST', `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/${encodeURIComponent(videosBucket)}/${encodedPath}`);
+        xhr.setRequestHeader('apikey', supabaseAnonKey);
+        xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+        xhr.setRequestHeader('x-upsert', 'false');
+        xhr.upload.addEventListener('progress', event => {
+          if (event.lengthComputable) onProgress((event.loaded / event.total) * 100);
+        });
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            onProgress(100);
+            resolve();
+            return;
+          }
+          let message = xhr.statusText || 'Error desconocido.';
+          try {
+            const response = JSON.parse(xhr.responseText);
+            message = response.message || response.error || message;
+          } catch {
+            if (xhr.responseText) message = xhr.responseText;
+          }
+          reject(new Error(`No se pudo subir el video: ${message}`));
+        });
+        xhr.addEventListener('error', () => reject(new Error('No se pudo subir el video. Comprueba tu conexión e inténtalo de nuevo.')));
+        xhr.addEventListener('abort', () => reject(new Error('La subida del video fue interrumpida.')));
+        xhr.send(file);
+      });
+    }
     uploadVideoButton.addEventListener('click', () => {
       if (!requireUser() || !ensureSupabase()) return;
       uploadVideoInput.click();
@@ -1207,6 +1263,8 @@
     cancelVideoUpload.addEventListener('click', () => {
       selectedVideoFile = null;
       videoUploadForm.reset();
+      document.getElementById('selectedVideoName').textContent = '';
+      resetVideoUploadProgress();
       videoUploadForm.classList.add('hidden');
     });
     videoUploadForm.addEventListener('submit', async event => {
@@ -1220,34 +1278,42 @@
       const file = selectedVideoFile;
       const userId = currentUser.id;
       const description = videoDescription.value.trim();
-      const visibility = videoVisibility.value;
       const extension = file.name.split('.').pop()?.toLowerCase() || 'mp4';
       const path = `${userId}/videos/${crypto.randomUUID()}.${extension}`;
       uploadVideoButton.disabled = true;
       submitVideoUpload.disabled = true;
       cancelVideoUpload.disabled = true;
+      videoUploadProgressContainer.classList.remove('hidden');
+      setVideoUploadProgress(0);
       showToast('Subiendo video…');
       let uploaded = false;
       let saved = false;
       try {
-        const { error: uploadError } = await supabaseClient.storage.from(videosBucket).upload(path, file, {
-          contentType: file.type,
-          upsert: false
-        });
-        if (uploadError) throw new Error(`No se pudo subir el video: ${uploadError.message}`);
+        await uploadVideoWithProgress(file, path, setVideoUploadProgress);
         uploaded = true;
 
         const { data, error: urlError } = await supabaseClient.storage.from(videosBucket).createSignedUrl(path, 3600);
         if (urlError) throw new Error(`No se pudo preparar el video: ${urlError.message}`);
 
-        const { error: insertError } = await supabaseClient.from('videos').insert({
-          user_id: userId,
-          title,
-          description,
-          visibility,
-          video_path: path
-        });
-        if (insertError) throw new Error(`No se pudieron guardar los datos del video: ${insertError.message}`);
+        let insertResult;
+        try {
+          insertResult = await supabaseClient.from('videos').insert({
+            titulo: title,
+            descripcion: description,
+            video_path: path,
+            usuario_id: userId
+          });
+        } catch (insertError) {
+          console.error('Error al guardar los datos del video en public.videos:', insertError);
+          const details = insertError.message || String(insertError);
+          throw new Error(`No se pudieron guardar los datos del video: ${details}`);
+        }
+        const { error: insertError } = insertResult;
+        if (insertError) {
+          console.error('Error al guardar los datos del video en public.videos:', insertError);
+          const details = insertError.message || String(insertError);
+          throw new Error(`No se pudieron guardar los datos del video: ${details}`);
+        }
         saved = true;
         loadPublishedVideos().catch(error => showToast(error.message || 'No se pudo actualizar la lista de videos.'));
 
@@ -1257,8 +1323,10 @@
         document.getElementById('clipper').classList.remove('hidden');
         selectedVideoFile = null;
         videoUploadForm.reset();
+        document.getElementById('selectedVideoName').textContent = '';
+        resetVideoUploadProgress();
         videoUploadForm.classList.add('hidden');
-        showToast('Video subido y guardado correctamente. Ya puedes crear un clip.');
+        showToast('¡Video publicado con éxito!');
         document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (error) {
         let message = error.message || 'No se pudo subir el video.';
@@ -1270,6 +1338,7 @@
             message += ` No se pudo limpiar el archivo subido: ${cleanupError.message || 'error desconocido.'}`;
           }
         }
+        resetVideoUploadProgress();
         showToast(message);
       } finally {
         uploadVideoButton.disabled = false;

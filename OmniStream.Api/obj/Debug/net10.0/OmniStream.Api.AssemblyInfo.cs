@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OmniStream.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a0950164ebceae8cdbb4d36541dec71d377916df")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3ca3ae6ae760c9d1c2ab8e52a4ddbc0642413549")]
 [assembly: System.Reflection.AssemblyProductAttribute("OmniStream.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OmniStream.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
