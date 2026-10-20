@@ -1585,7 +1585,28 @@
       clipOfferModal.classList.add('hidden');
       clipOfferModal.classList.remove('flex');
     }
-    document.getElementById('acceptClipOffer').addEventListener('click', () => {
+    document.getElementById('acceptClipOffer').addEventListener('click', async () => {
+      if (!uploadedVideoPath) {
+        showToast('No se encontró la ruta del video publicado. Vuelve a publicar el video e inténtalo de nuevo.');
+        return;
+      }
+      let signedUrl;
+      try {
+        const { data, error } = await supabaseClient.storage.from(videosBucket).createSignedUrl(uploadedVideoPath, 3600);
+        if (error) throw new Error(error.message);
+        signedUrl = data?.signedUrl;
+      } catch (error) {
+        showToast(`No se pudo preparar el video para Clipper Studio: ${error.message || 'error desconocido.'}`);
+        return;
+      }
+      if (!signedUrl) {
+        showToast('No se recibió una URL válida del video publicado.');
+        return;
+      }
+      clipVideo.src = signedUrl;
+      clipVideo.load();
+      clipPreviewVideo.src = signedUrl;
+      clipPreviewVideo.load();
       closeClipOffer();
       document.getElementById('clipper').classList.remove('hidden');
       document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1599,10 +1620,20 @@
         document.getElementById('videosPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
-    document.getElementById('skipClipOffer').addEventListener('click', () => {
+    document.getElementById('skipClipOffer').addEventListener('click', async () => {
       closeClipOffer();
       document.getElementById('clipper').classList.add('hidden');
-      if (clipVideo.src) openMainPlayer(clipVideo.src, uploadedVideoTitle || 'Video publicado');
+      try {
+        await loadPublishedVideos();
+      } catch (error) {
+        showToast(error.message || 'No se pudo actualizar la lista de videos.');
+      }
+      if (currentUser && uuidPattern.test(currentUser.id)) {
+        openChannelProfile(currentUser.id);
+      } else {
+        activateTab('videos');
+        document.getElementById('videosPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
     clipOfferModal.addEventListener('click', event => {
       if (event.target === clipOfferModal) document.getElementById('skipClipOffer').click();
