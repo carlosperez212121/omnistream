@@ -968,6 +968,7 @@
       let videos = [];
       let clips = [];
       let subscriberCount = 0;
+      const isOwnChannel = currentUser?.id === channelId;
       const renderProfileSummary = () => {
         const channelName = profile?.display_name || `Canal · ${channelId.slice(0, 8)}`;
         const avatarUrl = profile?.avatar_url || null;
@@ -994,14 +995,17 @@
 
       try {
         if (supabaseClient) {
+          const videosQuery = supabaseClient.from('videos')
+            .select('id, title, description, video_path, visibility, created_at')
+            .eq('user_id', channelId);
+          if (!isOwnChannel) videosQuery.eq('visibility', 'public');
           const [
             profileResult,
             videosResult,
             clipsResult
           ] = await Promise.all([
             supabaseClient.from('channel_profiles').select('display_name, avatar_url, description').eq('user_id', channelId).maybeSingle(),
-            supabaseClient.from('videos').select('id, title, description, video_path, created_at')
-              .eq('user_id', channelId).eq('visibility', 'public').order('created_at', { ascending: false }),
+            videosQuery.order('created_at', { ascending: false }),
             supabaseClient.from('media_clips').select('id, title, clip_url, video_id, created_at')
               .eq('user_id', channelId).eq('status', 'ready').order('created_at', { ascending: false })
           ]);
@@ -1036,6 +1040,7 @@
           const title = video.title || 'Video sin título';
           const card = document.createElement('article');
           card.className = 'overflow-hidden rounded-xl border border-line bg-ink';
+          card.dataset.profileVideoCard = video.id;
           const play = document.createElement('button');
           play.type = 'button';
           play.className = 'w-full bg-gradient-to-br from-sky-950 to-emerald-900 px-4 py-8 text-left text-sm font-semibold text-white hover:from-sky-900';
@@ -1045,7 +1050,38 @@
           const description = document.createElement('p');
           description.className = 'px-4 py-3 text-xs text-zinc-400';
           description.textContent = video.description || 'Video publicado en este canal.';
-          card.append(play, description);
+          const content = document.createElement('div');
+          content.className = 'flex items-center justify-between gap-3 px-4 pb-3';
+          const visibilityBadge = document.createElement('span');
+          visibilityBadge.dataset.profileVideoVisibility = '';
+          visibilityBadge.className = `rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+            video.visibility === 'public'
+              ? 'bg-emerald-400/10 text-emerald-200'
+              : 'bg-zinc-700/70 text-zinc-300'
+          }`;
+          visibilityBadge.textContent = video.visibility === 'public' ? 'Público' : 'Oculto';
+          content.append(visibilityBadge);
+          if (isOwnChannel) {
+            const actions = document.createElement('div');
+            actions.className = 'flex items-center gap-2';
+            const visibilityButton = document.createElement('button');
+            visibilityButton.type = 'button';
+            visibilityButton.dataset.profileVideoAction = 'visibility';
+            visibilityButton.dataset.videoId = video.id;
+            visibilityButton.dataset.videoVisibility = video.visibility || 'private';
+            visibilityButton.className = 'rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium text-zinc-300 transition hover:border-ember/50 hover:text-white';
+            visibilityButton.textContent = video.visibility === 'public' ? 'Ocultar' : 'Hacer público';
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.dataset.profileVideoAction = 'delete';
+            deleteButton.dataset.videoId = video.id;
+            deleteButton.dataset.videoPath = video.video_path || '';
+            deleteButton.className = 'rounded-lg border border-rose-400/20 px-2.5 py-1.5 text-xs font-medium text-rose-200 transition hover:border-rose-400/50 hover:bg-rose-400/10';
+            deleteButton.textContent = 'Borrar';
+            actions.append(visibilityButton, deleteButton);
+            content.append(actions);
+          }
+          card.append(play, description, content);
           videosPanel.append(card);
         });
         for (const clip of clips) {
@@ -1181,6 +1217,7 @@
         const card = document.createElement('article');
         card.className = 'community-card group';
         card.dataset.databaseVideo = '';
+        card.dataset.databaseVideoId = video.id;
         card.dataset.category = 'comunidad';
         const profile = channelProfiles.get(video.user_id);
         const channelName = profile?.display_name || `Canal · ${(video.user_id || '').slice(0, 8)}`;
@@ -1306,6 +1343,90 @@
       tab.addEventListener('click', () => setChannelProfileTab(tab.dataset.channelTab));
     });
     channelProfileModal.addEventListener('click', async event => {
+      const actionButton = event.target.closest('button[data-profile-video-action]');
+      if (actionButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (actionButton.disabled) return;
+        if (!requireUser('Inicia sesión para gestionar tus videos.') || !ensureSupabase()) return;
+        const videoId = actionButton.dataset.videoId;
+        const ownerId = channelProfileSubscribe.dataset.subscribeChannel;
+        if (!videoId || currentUser?.id !== ownerId || !uuidPattern.test(ownerId)) {
+          showToast('Solo puedes gestionar los videos de tu propio canal.');
+          return;
+        }
+
+        if (actionButton.dataset.profileVideoAction === 'delete') {
+          if (!confirm('¿Seguro que quieres borrar este video? Esta acción no se puede deshacer.')) return;
+          const videoCard = actionButton.closest('[data-profile-video-card]');
+          const cardActions = [...videoCard.querySelectorAll('button[data-profile-video-action]')];
+          cardActions.forEach(button => { button.disabled = true; });
+          try {
+            const { data, error } = await supabaseClient.from('videos').delete()
+              .eq('id', videoId).eq('user_id', ownerId).select('id');
+            if (error) throw error;
+            if (!data?.length) throw new Error('No se encontró el video o no tienes permiso para borrarlo.');
+            videoCard.remove();
+            videoGrid.querySelector(`[data-database-video-id="${CSS.escape(videoId)}"]`)?.remove();
+            document.getElementById('channelProfileVideoCount').textContent =
+              String(document.getElementById('channelVideosPanel').children.length);
+            setChannelProfileTab('videos');
+            const videoPath = actionButton.dataset.videoPath;
+            if (videoPath) {
+              try {
+                const { error: storageError } = await supabaseClient.storage.from(videosBucket).remove([videoPath]);
+                if (storageError) {
+                  showToast(`Video borrado, pero no se pudo borrar el archivo: ${storageError.message}`);
+                  return;
+                }
+              } catch (storageError) {
+                showToast(`Video borrado, pero no se pudo borrar el archivo: ${storageError.message || 'error desconocido.'}`);
+                return;
+              }
+            }
+            showToast('Video borrado.');
+          } catch (error) {
+            showToast(`No se pudo borrar el video: ${error.message || 'inténtalo de nuevo.'}`);
+          } finally {
+            cardActions.forEach(button => { button.disabled = false; });
+          }
+          return;
+        }
+
+        const nextVisibility = actionButton.dataset.videoVisibility === 'public' ? 'private' : 'public';
+        const videoCard = actionButton.closest('[data-profile-video-card]');
+        const cardActions = [...videoCard.querySelectorAll('button[data-profile-video-action]')];
+        cardActions.forEach(button => { button.disabled = true; });
+        try {
+          const { data, error } = await supabaseClient.from('videos')
+            .update({ visibility: nextVisibility })
+            .eq('id', videoId).eq('user_id', ownerId)
+            .select('id, visibility').maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error('No se encontró el video o no tienes permiso para modificarlo.');
+          actionButton.dataset.videoVisibility = data.visibility;
+          actionButton.textContent = data.visibility === 'public' ? 'Ocultar' : 'Hacer público';
+          const badge = videoCard.querySelector('[data-profile-video-visibility]');
+          if (badge) {
+            badge.textContent = data.visibility === 'public' ? 'Público' : 'Oculto';
+            badge.classList.toggle('bg-emerald-400/10', data.visibility === 'public');
+            badge.classList.toggle('text-emerald-200', data.visibility === 'public');
+            badge.classList.toggle('bg-zinc-700/70', data.visibility !== 'public');
+            badge.classList.toggle('text-zinc-300', data.visibility !== 'public');
+          }
+          if (data.visibility !== 'public') {
+            videoGrid.querySelector(`[data-database-video-id="${CSS.escape(videoId)}"]`)?.remove();
+          } else {
+            await loadPublishedVideos();
+          }
+          showToast(data.visibility === 'public' ? 'Video hecho público.' : 'Video ocultado.');
+        } catch (error) {
+          showToast(`No se pudo cambiar la visibilidad: ${error.message || 'inténtalo de nuevo.'}`);
+        } finally {
+          cardActions.forEach(button => { button.disabled = false; });
+        }
+        return;
+      }
       const videoButton = event.target.closest('[data-profile-video-path]');
       if (videoButton) {
         try {
