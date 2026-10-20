@@ -81,6 +81,84 @@ create table if not exists public.videos (
   created_at timestamptz not null default timezone('utc'::text, now())
 );
 
+create table if not exists public.channel_profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  display_name text not null,
+  avatar_url text,
+  description text not null default '',
+  updated_at timestamptz not null default timezone('utc'::text, now())
+);
+
+alter table public.channel_profiles enable row level security;
+
+drop policy if exists "Anyone can read channel profiles" on public.channel_profiles;
+create policy "Anyone can read channel profiles"
+  on public.channel_profiles for select to anon, authenticated
+  using (true);
+
+drop policy if exists "Users can create their own channel profile" on public.channel_profiles;
+create policy "Users can create their own channel profile"
+  on public.channel_profiles for insert to authenticated
+  with check (user_id = (select auth.uid()));
+
+drop policy if exists "Users can update their own channel profile" on public.channel_profiles;
+create policy "Users can update their own channel profile"
+  on public.channel_profiles for update to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
+
+grant select on table public.channel_profiles to anon, authenticated;
+grant insert, update on table public.channel_profiles to authenticated;
+
+alter table public.media_clips
+  add column if not exists video_id uuid references public.videos(id) on delete cascade;
+
+drop policy if exists "Users can save their own clips" on public.media_clips;
+create policy "Users can save their own clips"
+  on public.media_clips for insert to authenticated
+  with check (
+    user_id = (select auth.uid()::text)
+    and (
+      video_id is null
+      or exists (
+        select 1
+        from public.videos
+        where id = video_id
+          and user_id = (select auth.uid())
+      )
+    )
+  );
+
+drop policy if exists "Anyone can read clips for public videos" on public.media_clips;
+create policy "Anyone can read clips for public videos"
+  on public.media_clips for select to anon, authenticated
+  using (
+    status = 'ready'
+    and exists (
+      select 1
+      from public.videos
+      where id = video_id
+        and visibility = 'public'
+    )
+  );
+
+grant select on table public.media_clips to anon, authenticated;
+
+drop policy if exists "Anyone can read clips for public videos" on storage.objects;
+create policy "Anyone can read clips for public videos"
+  on storage.objects for select to anon, authenticated
+  using (
+    bucket_id = 'user-media'
+    and exists (
+      select 1
+      from public.media_clips
+      join public.videos on public.videos.id = public.media_clips.video_id
+      where public.media_clips.clip_url = storage.objects.name
+        and public.media_clips.status = 'ready'
+        and public.videos.visibility = 'public'
+    )
+  );
+
 alter table public.videos enable row level security;
 
 drop policy if exists "Anyone can read public videos" on public.videos;

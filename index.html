@@ -78,6 +78,7 @@
       </button>
       <div id="profileMenu" class="absolute right-4 top-[64px] z-50 hidden min-w-56 rounded-2xl border border-line bg-panel p-3 shadow-xl sm:right-10">
         <p id="profileEmail" class="truncate px-2 py-1 text-xs text-zinc-400"></p>
+        <button id="viewOwnChannel" type="button" class="mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-sm text-white transition hover:bg-white/5"><i data-lucide="circle-user-round" class="h-4 w-4"></i>Ver mi canal</button>
         <button id="signOutButton" type="button" class="mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-sm text-white transition hover:bg-white/5"><i data-lucide="log-out" class="h-4 w-4"></i>Cerrar sesión</button>
       </div>
       <button aria-label="Abrir menú" class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-zinc-300 md:hidden" onclick="document.getElementById('mobileNav').classList.toggle('hidden')">
@@ -280,7 +281,7 @@
             </div>
             <button id="playerToggle" aria-label="Reproducir video" class="absolute left-1/2 top-1/2 z-20 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow-lg transition hover:scale-105"><i data-lucide="play" class="ml-0.5 h-5 w-5 fill-current"></i></button>
             <div class="pointer-events-none absolute inset-x-4 top-4 z-10 flex items-end justify-between gap-3 sm:inset-x-5 sm:top-5">
-              <div><p class="text-[10px] font-semibold uppercase tracking-widest text-white/70">Reproductor · muestra de prueba</p><p class="mt-1 text-sm font-bold text-white">Big Buck Bunny</p></div>
+              <div><p class="text-[10px] font-semibold uppercase tracking-widest text-white/70">Video seleccionado</p><p id="clipSourceTitle" class="mt-1 text-sm font-bold text-white">Video de muestra</p></div>
               <span id="clipTime" class="font-mono text-[10px] text-white/90">00:00 / --:--</span>
             </div>
           </div>
@@ -299,7 +300,7 @@
         </div>
         <div class="flex items-center justify-center bg-[radial-gradient(ellipse_at_center,rgba(255,119,89,.13),transparent_65%)] p-6 lg:p-10">
           <div class="relative aspect-[9/16] w-44 overflow-hidden rounded-[28px] border-[5px] border-zinc-700 bg-gradient-to-br from-slate-800 via-indigo-950 to-rose-950 shadow-2xl sm:w-52">
-            <img src="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=600&q=85" class="absolute inset-0 h-full w-full object-cover opacity-75" alt="Vista previa del clip vertical">
+            <video id="clipPreviewVideo" class="absolute inset-0 h-full w-full object-cover opacity-75" muted playsinline preload="metadata" aria-label="Vista previa del clip vertical 9:16"></video>
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20"></div>
             <div class="absolute left-3 top-3 rounded-full bg-black/45 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-white">Vista previa · 9:16</div>
             <div class="absolute inset-x-3 bottom-4"><div class="mb-2 h-1 w-8 rounded-full bg-ember"></div><p id="captionPreview" class="line-clamp-3 text-xs font-semibold leading-4 text-white">Un instante que merece volver a verse ✨</p><p class="mt-2 text-[9px] font-medium text-white/70">Tu canal · ahora</p></div>
@@ -397,16 +398,39 @@
   </div>
 
   <div id="channelProfileModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="channelProfileTitle">
-    <section class="w-full max-w-md rounded-2xl border border-line bg-panel p-6 shadow-2xl">
+    <section class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-panel p-6 shadow-2xl sm:p-8">
       <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="text-[10px] font-bold uppercase tracking-widest text-mint">Perfil del creador</p>
-          <h2 id="channelProfileTitle" class="mt-2 text-xl font-semibold text-white">Canal</h2>
-          <p class="mt-2 text-sm text-zinc-400"><span data-subscriber-count>0</span> suscriptores</p>
+        <div class="flex items-center gap-4">
+          <img id="channelProfileAvatar" class="hidden h-16 w-16 rounded-full object-cover" alt="">
+          <span id="channelProfileInitials" class="grid h-16 w-16 place-items-center rounded-full bg-ember/20 text-xl font-bold text-ember">C</span>
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-mint">Perfil del canal</p>
+            <h2 id="channelProfileTitle" class="mt-2 text-xl font-semibold text-white">Canal</h2>
+            <p id="channelProfileDescription" class="mt-2 max-w-xl text-sm text-zinc-400"></p>
+            <p class="mt-2 text-xs text-zinc-500"><span data-subscriber-count>0</span> suscriptores · <span id="channelProfileVideoCount">0</span> videos · <span id="channelProfileClipCount">0</span> clips</p>
+          </div>
         </div>
         <button id="closeChannelProfile" type="button" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-400 transition hover:bg-white/5 hover:text-white" aria-label="Cerrar perfil del canal"><i data-lucide="x" class="h-4 w-4"></i></button>
       </div>
+      <div class="mt-6 flex gap-2 border-b border-line" role="tablist" aria-label="Contenido del canal">
+        <button type="button" id="channelVideosTab" class="border-b-2 border-ember px-4 py-3 text-sm font-semibold text-white" role="tab" aria-selected="true" data-channel-tab="videos">Videos</button>
+        <button type="button" id="channelClipsTab" class="border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-zinc-500" role="tab" aria-selected="false" data-channel-tab="clips">Clips / Promos</button>
+      </div>
+      <div id="channelVideosPanel" class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2" role="tabpanel" data-channel-panel="videos"></div>
+      <div id="channelClipsPanel" class="mt-5 hidden grid grid-cols-1 gap-4 sm:grid-cols-2" role="tabpanel" data-channel-panel="clips" aria-hidden="true"></div>
+      <p id="channelProfileEmpty" class="mt-5 hidden rounded-xl border border-line p-6 text-center text-sm text-zinc-400"></p>
       <button id="channelProfileSubscribe" type="button" class="mt-6 w-full rounded-full bg-ember px-4 py-3 text-sm font-bold text-ink transition hover:bg-orange-300" data-subscribe-channel="">Suscribirse</button>
+    </section>
+  </div>
+
+  <div id="clipOfferModal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="clipOfferTitle">
+    <section class="w-full max-w-md rounded-2xl border border-line bg-panel p-6 shadow-2xl">
+      <h2 id="clipOfferTitle" class="text-xl font-semibold text-white">Video publicado</h2>
+      <p class="mt-3 text-sm leading-6 text-zinc-400">¿Quieres crear un clip corto (9:16) para promocionar tu video en redes?</p>
+      <div class="mt-6 flex flex-wrap justify-end gap-3">
+        <button id="skipClipOffer" type="button" class="rounded-full border border-line px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/5">No, ir al video</button>
+        <button id="acceptClipOffer" type="button" class="rounded-full bg-ember px-4 py-2.5 text-sm font-bold text-ink transition hover:bg-orange-300">Crear clip</button>
+      </div>
     </section>
   </div>
 
@@ -480,13 +504,17 @@
     const localPasswordIterations = 210000;
     let currentUser = null;
     let uploadedVideoPath = null;
+    let uploadedVideoId = null;
+    let uploadedVideoTitle = '';
     let authMode = 'signin';
     const searchInputs = [document.getElementById('searchInput'), document.getElementById('mobileSearch')].filter(Boolean);
     const videoGrid = document.getElementById('videoGrid');
     const subscribedChannels = new Set();
     const subscriberCounts = new Map();
     const busyChannels = new Set();
+    const channelProfiles = new Map();
     let subscriptionRefreshVersion = 0;
+    let channelProfileLoadVersion = 0;
     const emptyResults = document.getElementById('emptyResults');
     let activeFilter = 'all';
     let toastTimer;
@@ -549,6 +577,13 @@
     const channelProfileModal = document.getElementById('channelProfileModal');
     const channelProfileSubscribe = document.getElementById('channelProfileSubscribe');
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    function openMainPlayer(source, title) {
+      mainPlayerVideo.src = source;
+      document.getElementById('mainPlayerTitle').textContent = title || 'Video';
+      mainPlayerModal.classList.remove('hidden');
+      mainPlayerModal.classList.add('flex');
+      mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.'));
+    }
     function closeMainPlayer() {
       mainPlayerVideo.pause();
       mainPlayerVideo.removeAttribute('src');
@@ -559,22 +594,23 @@
     videoGrid.addEventListener('click', async event => {
       const button = event.target.closest('.video-launch');
       if (!button) return;
-      const source = button.dataset.videoSrc;
+      let source = button.dataset.videoSrc;
+      if (button.dataset.videoPath) {
+        const { data, error } = await supabaseClient.storage
+          .from(videosBucket)
+          .createSignedUrl(button.dataset.videoPath, 3600);
+        if (error) {
+          showToast(`No se pudo preparar el video: ${error.message}`);
+          return;
+        }
+        source = data.signedUrl;
+      }
       if (!source) {
         showToast('Este video todavía no tiene una fuente disponible.');
         return;
       }
       const card = button.closest('.community-card');
-      document.getElementById('mainPlayerTitle').textContent =
-        card.querySelector('h3')?.textContent.trim() || 'Video';
-      mainPlayerVideo.src = source;
-      mainPlayerModal.classList.remove('hidden');
-      mainPlayerModal.classList.add('flex');
-      try {
-        await mainPlayerVideo.play();
-      } catch {
-        showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.');
-      }
+      openMainPlayer(source, card.querySelector('h3')?.textContent.trim() || 'Video');
     });
     document.getElementById('closeMainPlayer').addEventListener('click', closeMainPlayer);
     mainPlayerModal.addEventListener('click', event => {
@@ -664,6 +700,8 @@
       currentUser = user;
       if (uploadedVideoPath && previousUserId !== user?.id) {
         uploadedVideoPath = null;
+        uploadedVideoId = null;
+        uploadedVideoTitle = '';
         const video = document.getElementById('clipVideo');
         video.pause();
         video.removeAttribute('src');
@@ -682,7 +720,17 @@
       label.classList.toggle('sm:inline', Boolean(user));
       button.setAttribute('aria-label', user ? 'Abrir menú de usuario' : 'Iniciar sesión o registrarse');
       document.getElementById('profileEmail').textContent = user?.email || '';
+      document.getElementById('viewOwnChannel').classList.toggle('hidden', !user);
       if (user) {
+        if (supabaseClient && uuidPattern.test(user.id)) {
+          syncChannelProfile(user)
+            .then(() => loadPublishedVideos().catch(error => {
+              showToast(`No se pudo actualizar la lista de videos: ${error.message || 'inténtalo de nuevo.'}`);
+            }))
+            .catch(error => {
+              showToast(`No se pudo actualizar tu perfil público: ${error.message || 'inténtalo de nuevo.'}`);
+            });
+        }
         const avatarUrl = user.user_metadata?.avatar_url;
         if (avatarUrl) {
           const avatar = document.createElement('img');
@@ -837,13 +885,153 @@
       return button;
     }
 
+    async function syncChannelProfile(user) {
+      const metadata = user.user_metadata || {};
+      const profileValues = {
+        display_name: metadata.full_name || metadata.name || user.email?.split('@')[0] || 'Creador',
+        avatar_url: metadata.avatar_url || metadata.picture || null,
+        updated_at: new Date().toISOString()
+      };
+      const { data: existingProfile, error: lookupError } = await supabaseClient
+        .from('channel_profiles').select('user_id').eq('user_id', user.id).maybeSingle();
+      if (lookupError) throw new Error(lookupError.message);
+      const { error } = existingProfile
+        ? await supabaseClient.from('channel_profiles').update(profileValues).eq('user_id', user.id)
+        : await supabaseClient.from('channel_profiles').insert({
+          ...profileValues,
+          user_id: user.id,
+          description: metadata.description || metadata.bio || ''
+        });
+      if (error) throw new Error(error.message);
+    }
+
+    function setChannelProfileTab(tabName) {
+      document.querySelectorAll('[data-channel-tab]').forEach(tab => {
+        const active = tab.dataset.channelTab === tabName;
+        tab.setAttribute('aria-selected', String(active));
+        tab.classList.toggle('border-ember', active);
+        tab.classList.toggle('text-white', active);
+        tab.classList.toggle('border-transparent', !active);
+        tab.classList.toggle('text-zinc-500', !active);
+      });
+      document.querySelectorAll('[data-channel-panel]').forEach(panel => {
+        const active = panel.dataset.channelPanel === tabName;
+        panel.classList.toggle('hidden', !active);
+        panel.setAttribute('aria-hidden', String(!active));
+      });
+      const emptyMessage = document.getElementById('channelProfileEmpty');
+      const activePanel = document.querySelector(`[data-channel-panel="${tabName}"]`);
+      const hasContent = Boolean(activePanel?.children.length);
+      emptyMessage.textContent = tabName === 'videos'
+        ? 'Este canal todavía no ha publicado videos completos.'
+        : 'Este canal todavía no ha publicado clips o promos.';
+      emptyMessage.classList.toggle('hidden', hasContent);
+    }
+
+    async function loadChannelProfile(channelId) {
+      const loadVersion = ++channelProfileLoadVersion;
+      const videosPanel = document.getElementById('channelVideosPanel');
+      const clipsPanel = document.getElementById('channelClipsPanel');
+      videosPanel.replaceChildren();
+      clipsPanel.replaceChildren();
+      const emptyMessage = document.getElementById('channelProfileEmpty');
+      emptyMessage.textContent = 'Cargando el contenido del canal…';
+      emptyMessage.classList.remove('hidden');
+      if (!supabaseClient) {
+        document.getElementById('channelProfileEmpty').textContent = 'El perfil del canal no está disponible sin conexión a Supabase.';
+        document.getElementById('channelProfileEmpty').classList.remove('hidden');
+        return;
+      }
+
+      const [
+        { data: profile, error: profileError },
+        { data: videos, error: videosError },
+        { data: clips, error: clipsError },
+        { data: subscriberCount, error: countError }
+      ] = await Promise.all([
+        supabaseClient.from('channel_profiles').select('display_name, avatar_url, description').eq('user_id', channelId).maybeSingle(),
+        supabaseClient.from('videos').select('id, title, description, video_path, created_at')
+          .eq('user_id', channelId).eq('visibility', 'public').order('created_at', { ascending: false }),
+        supabaseClient.from('media_clips').select('id, title, clip_url, video_id, created_at')
+          .eq('user_id', channelId).eq('status', 'ready').order('created_at', { ascending: false }),
+        supabaseClient.rpc('contar_suscriptores', { p_canal_id: channelId })
+      ]);
+      if (loadVersion !== channelProfileLoadVersion) return;
+      const failedResult = profileError || videosError || clipsError || countError;
+      if (failedResult) throw new Error(`No se pudo cargar el perfil del canal: ${failedResult.message}`);
+
+      const channelName = profile?.display_name || `Canal · ${channelId.slice(0, 8)}`;
+      const avatar = document.getElementById('channelProfileAvatar');
+      const initials = document.getElementById('channelProfileInitials');
+      document.getElementById('channelProfileTitle').textContent = channelName;
+      document.getElementById('channelProfileDescription').textContent = profile?.description || 'Este canal todavía no ha añadido una descripción.';
+      document.getElementById('channelProfileVideoCount').textContent = String(videos.length);
+      document.getElementById('channelProfileClipCount').textContent = String(clips.length);
+      const initialLetters = channelName.trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0] || '').join('').toUpperCase() || 'C';
+      initials.textContent = initialLetters;
+      initials.classList.toggle('hidden', Boolean(profile?.avatar_url));
+      avatar.classList.toggle('hidden', !profile?.avatar_url);
+      if (profile?.avatar_url) {
+        avatar.src = profile.avatar_url;
+        avatar.referrerPolicy = 'no-referrer';
+      } else {
+        avatar.removeAttribute('src');
+      }
+      subscriberCounts.set(channelId, Number(subscriberCount) || 0);
+      channelProfileModal.querySelector('[data-subscriber-count]').dataset.subscriberCount = channelId;
+      updateChannelControls(channelId);
+      videos.forEach(video => {
+        const card = document.createElement('article');
+        card.className = 'overflow-hidden rounded-xl border border-line bg-ink';
+        const play = document.createElement('button');
+        play.type = 'button';
+        play.className = 'w-full bg-gradient-to-br from-sky-950 to-emerald-900 px-4 py-8 text-left text-sm font-semibold text-white hover:from-sky-900';
+        play.dataset.profileVideoPath = video.video_path;
+        play.dataset.profileVideoTitle = video.title;
+        play.textContent = `▶ ${video.title}`;
+        const description = document.createElement('p');
+        description.className = 'px-4 py-3 text-xs text-zinc-400';
+        description.textContent = video.description || 'Video publicado en este canal.';
+        card.append(play, description);
+        videosPanel.append(card);
+      });
+      for (const clip of clips) {
+        const card = document.createElement('article');
+        card.className = 'overflow-hidden rounded-xl border border-line bg-ink p-3';
+        const video = document.createElement('video');
+        video.className = 'mx-auto max-h-80 rounded-lg bg-black';
+        video.controls = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.setAttribute('aria-label', clip.title);
+        const title = document.createElement('p');
+        title.className = 'mt-3 truncate text-sm font-semibold text-white';
+        title.textContent = clip.title;
+        const { data, error } = await supabaseClient.storage.from(mediaBucket).createSignedUrl(clip.clip_url, 3600);
+        if (error) throw new Error(`No se pudo preparar el clip "${clip.title}": ${error.message}`);
+        video.src = data.signedUrl;
+        card.append(video, title);
+        clipsPanel.append(card);
+      }
+      setChannelProfileTab('videos');
+      document.getElementById('channelProfileVideoCount').textContent = String(videos.length);
+      document.getElementById('channelProfileClipCount').textContent = String(clips.length);
+      lucide.createIcons();
+    }
+
     function openChannelProfile(channelId) {
+      if (!channelId || !uuidPattern.test(channelId)) {
+        showToast('Este canal no tiene un identificador válido.');
+        return;
+      }
       document.getElementById('channelProfileTitle').textContent = `Canal · ${channelId.slice(0, 8)}`;
       channelProfileSubscribe.dataset.subscribeChannel = channelId;
       channelProfileModal.querySelector('[data-subscriber-count]').dataset.subscriberCount = channelId;
+      setChannelProfileTab('videos');
       channelProfileModal.classList.remove('hidden');
       channelProfileModal.classList.add('flex');
       updateChannelControls(channelId);
+      loadChannelProfile(channelId).catch(error => showToast(error.message || 'No se pudo cargar el perfil del canal.'));
       lucide.createIcons();
     }
 
@@ -878,12 +1066,12 @@
       if (!supabaseClient) return;
       const { data: videos, error } = await supabaseClient
         .from('videos')
-        .select('id, usuario_id, titulo, description, video_path, created_at')
+        .select('id, user_id, title, description, video_path, created_at')
         .eq('visibility', 'public')
         .order('created_at', { ascending: false });
       if (error) throw new Error(`No se pudieron cargar los videos públicos: ${error.message}`);
 
-      const channelIds = [...new Set(videos.map(video => video.usuario_id))];
+      const channelIds = [...new Set(videos.map(video => video.user_id))];
       const counts = await Promise.all(channelIds.map(async channelId => {
         const { data, error: countError } = await supabaseClient.rpc('contar_suscriptores', {
           p_canal_id: channelId
@@ -894,29 +1082,28 @@
         return [channelId, count];
       }));
       counts.forEach(([channelId, count]) => subscriberCounts.set(channelId, count));
-
-      const videoData = await Promise.all(videos.map(async video => {
-        const { data, error: urlError } = await supabaseClient.storage
-          .from(videosBucket)
-          .createSignedUrl(video.video_path, 3600);
-        if (urlError) throw new Error(`No se pudo preparar el video "${video.titulo}": ${urlError.message}`);
-        return { ...video, signedUrl: data.signedUrl };
-      }));
+      const { data: profiles, error: profilesError } = channelIds.length
+        ? await supabaseClient.from('channel_profiles').select('user_id, display_name, avatar_url').in('user_id', channelIds)
+        : { data: [], error: null };
+      if (profilesError) throw new Error(`No se pudieron cargar los perfiles de los canales: ${profilesError.message}`);
+      profiles?.forEach(profile => channelProfiles.set(profile.user_id, profile));
 
       videoGrid.querySelectorAll('[data-database-video]').forEach(card => card.remove());
       const fragment = document.createDocumentFragment();
-      videoData.forEach(video => {
+      videos.forEach(video => {
         const card = document.createElement('article');
         card.className = 'community-card group';
         card.dataset.databaseVideo = '';
         card.dataset.category = 'comunidad';
-        card.dataset.search = `${video.titulo} ${video.description} ${video.usuario_id}`.toLocaleLowerCase('es');
+        const profile = channelProfiles.get(video.user_id);
+        const channelName = profile?.display_name || `Canal · ${video.user_id.slice(0, 8)}`;
+        card.dataset.search = `${video.title} ${video.description} ${channelName}`.toLocaleLowerCase('es');
 
         const launch = document.createElement('button');
         launch.type = 'button';
         launch.className = 'video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-950 to-emerald-900 text-left';
-        launch.dataset.videoSrc = video.signedUrl;
-        launch.setAttribute('aria-label', `Reproducir ${video.titulo}`);
+        launch.dataset.videoPath = video.video_path;
+        launch.setAttribute('aria-label', `Reproducir ${video.title}`);
         const play = document.createElement('span');
         play.className = 'play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100';
         play.innerHTML = '<i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i>';
@@ -926,24 +1113,40 @@
         details.className = 'mt-3 flex flex-wrap items-center justify-between gap-2';
         const title = document.createElement('h3');
         title.className = 'min-w-0 flex-1 truncate text-sm font-semibold text-white';
-        title.textContent = video.titulo;
+        title.textContent = video.title;
         const profileButton = document.createElement('button');
         profileButton.type = 'button';
-        profileButton.dataset.channelProfile = video.usuario_id;
-        profileButton.className = 'text-xs text-zinc-400 transition hover:text-white';
-        profileButton.textContent = `Canal · ${video.usuario_id.slice(0, 8)}`;
+        profileButton.dataset.channelProfile = video.user_id;
+        profileButton.className = 'inline-flex min-w-0 items-center gap-2 text-xs text-zinc-400 transition hover:text-white';
+        if (profile?.avatar_url) {
+          const profileAvatar = document.createElement('img');
+          profileAvatar.src = profile.avatar_url;
+          profileAvatar.alt = '';
+          profileAvatar.referrerPolicy = 'no-referrer';
+          profileAvatar.className = 'h-7 w-7 rounded-full object-cover';
+          profileButton.append(profileAvatar);
+        } else {
+          const profileInitial = document.createElement('span');
+          profileInitial.className = 'grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ember/20 text-[10px] font-bold text-ember';
+          profileInitial.textContent = Array.from(channelName)[0]?.toUpperCase() || 'C';
+          profileButton.append(profileInitial);
+        }
+        const profileName = document.createElement('span');
+        profileName.className = 'truncate';
+        profileName.textContent = channelName;
+        profileButton.append(profileName);
         details.append(title, profileButton);
 
         const footer = document.createElement('div');
         footer.className = 'mt-3 flex flex-wrap items-center justify-between gap-2';
         const countLabel = document.createElement('span');
         countLabel.className = 'text-xs text-zinc-500';
-        countLabel.dataset.subscriberCount = video.usuario_id;
-        countLabel.textContent = String(subscriberCounts.get(video.usuario_id) || 0);
+        countLabel.dataset.subscriberCount = video.user_id;
+        countLabel.textContent = String(subscriberCounts.get(video.user_id) || 0);
         const countText = document.createElement('span');
         countText.className = 'mr-auto text-xs text-zinc-500';
         countText.textContent = 'suscriptores';
-        footer.append(countLabel, countText, createSubscribeButton(video.usuario_id));
+        footer.append(countLabel, countText, createSubscribeButton(video.user_id));
 
         card.append(launch, details, footer);
         fragment.append(card);
@@ -1010,6 +1213,23 @@
       const button = event.target.closest('button[data-channel-profile]');
       if (button) openChannelProfile(button.dataset.channelProfile);
     });
+    document.querySelectorAll('[data-channel-tab]').forEach(tab => {
+      tab.addEventListener('click', () => setChannelProfileTab(tab.dataset.channelTab));
+    });
+    channelProfileModal.addEventListener('click', async event => {
+      const videoButton = event.target.closest('[data-profile-video-path]');
+      if (videoButton) {
+        try {
+          const { data, error } = await supabaseClient.storage
+            .from(videosBucket)
+            .createSignedUrl(videoButton.dataset.profileVideoPath, 3600);
+          if (error) throw new Error(error.message);
+          openMainPlayer(data.signedUrl, videoButton.dataset.profileVideoTitle);
+        } catch (error) {
+          showToast(`No se pudo reproducir el video: ${error.message || 'inténtalo de nuevo.'}`);
+        }
+      }
+    });
     document.getElementById('closeChannelProfile').addEventListener('click', closeChannelProfile);
     channelProfileModal.addEventListener('click', event => {
       if (event.target === channelProfileModal) closeChannelProfile();
@@ -1024,6 +1244,10 @@
       } else {
         document.getElementById('profileMenu').classList.toggle('hidden');
       }
+    });
+    document.getElementById('viewOwnChannel').addEventListener('click', () => {
+      document.getElementById('profileMenu').classList.add('hidden');
+      if (currentUser) openChannelProfile(currentUser.id);
     });
     document.getElementById('closeAuthModal').addEventListener('click', closeAuthModal);
     authModal.addEventListener('click', event => {
@@ -1294,18 +1518,16 @@
 
         const { data, error: urlError } = await supabaseClient.storage.from(videosBucket).createSignedUrl(path, 3600);
         if (urlError) throw new Error(`No se pudo preparar el video: ${urlError.message}`);
-        const { data: publicUrlData } = supabaseClient.storage.from(videosBucket).getPublicUrl(path);
-        const publicVideoUrl = publicUrlData.publicUrl;
 
         let insertResult;
         try {
           insertResult = await supabaseClient.from('videos').insert({
-            titulo: title,
-            descripcion: description,
+            user_id: userId,
+            title,
+            description,
+            visibility: videoVisibility.value,
             video_path: path,
-            url_video: publicVideoUrl,
-            usuario_id: userId
-          });
+          }).select('id').single();
         } catch (insertError) {
           console.error('Error al guardar los datos del video en public.videos:', insertError);
           const details = insertError.message || String(insertError);
@@ -1318,19 +1540,24 @@
           throw new Error(`No se pudieron guardar los datos del video: ${details}`);
         }
         saved = true;
-        loadPublishedVideos().catch(error => showToast(error.message || 'No se pudo actualizar la lista de videos.'));
+        uploadedVideoId = insertResult.data.id;
+        uploadedVideoTitle = title;
+        await loadPublishedVideos().catch(error => showToast(error.message || 'No se pudo actualizar la lista de videos.'));
 
         uploadedVideoPath = path;
         clipVideo.src = data.signedUrl;
         clipVideo.load();
-        document.getElementById('clipper').classList.remove('hidden');
+        clipPreviewVideo.src = data.signedUrl;
+        clipPreviewVideo.load();
+        document.getElementById('clipSourceTitle').textContent = title;
         selectedVideoFile = null;
         videoUploadForm.reset();
         document.getElementById('selectedVideoName').textContent = '';
         resetVideoUploadProgress();
         videoUploadForm.classList.add('hidden');
         showToast('¡Video publicado con éxito!');
-        document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('clipOfferModal').classList.remove('hidden');
+        document.getElementById('clipOfferModal').classList.add('flex');
       } catch (error) {
         let message = error.message || 'No se pudo subir el video.';
         if (uploaded && !saved) {
@@ -1350,9 +1577,42 @@
       }
     });
 
+    const clipOfferModal = document.getElementById('clipOfferModal');
+    function closeClipOffer() {
+      clipOfferModal.classList.add('hidden');
+      clipOfferModal.classList.remove('flex');
+    }
+    document.getElementById('acceptClipOffer').addEventListener('click', () => {
+      closeClipOffer();
+      document.getElementById('clipper').classList.remove('hidden');
+      document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.getElementById('skipClipOffer').addEventListener('click', () => {
+      closeClipOffer();
+      document.getElementById('clipper').classList.add('hidden');
+      if (clipVideo.src) openMainPlayer(clipVideo.src, uploadedVideoTitle || 'Video publicado');
+    });
+    clipOfferModal.addEventListener('click', event => {
+      if (event.target === clipOfferModal) document.getElementById('skipClipOffer').click();
+    });
+
     const clipVideo = document.getElementById('clipVideo');
+    const clipPreviewVideo = document.getElementById('clipPreviewVideo');
     const clipRange = document.getElementById('clipRange');
     const clipLength = 20;
+    clipPreviewVideo.src = clipVideo.querySelector('source')?.src || '';
+    function updateClipPreview() {
+      if (clipPreviewVideo.readyState < HTMLMediaElement.HAVE_METADATA
+          || !Number.isFinite(clipVideo.currentTime)
+          || !Number.isFinite(clipPreviewVideo.duration)) return;
+      const previewTime = Math.min(clipVideo.currentTime, Math.max(0, clipPreviewVideo.duration - 0.1));
+      if (Math.abs(clipPreviewVideo.currentTime - previewTime) > 0.25) {
+        clipPreviewVideo.currentTime = previewTime;
+      }
+    }
+    clipPreviewVideo.addEventListener('loadedmetadata', updateClipPreview);
+    clipVideo.addEventListener('timeupdate', updateClipPreview);
+    clipVideo.addEventListener('seeked', updateClipPreview);
     const formatTime = seconds => {
       if (!Number.isFinite(seconds)) return '--:--';
       const wholeSeconds = Math.floor(seconds);
@@ -1372,7 +1632,7 @@
     clipVideo.addEventListener('durationchange', updateClip);
     clipVideo.addEventListener('timeupdate', updateClip);
     clipVideo.addEventListener('seeked', updateClip);
-    clipVideo.addEventListener('error', () => showToast('No se pudo cargar el video de prueba.'));
+    clipVideo.addEventListener('error', () => showToast('No se pudo cargar el video seleccionado.'));
     clipRange.addEventListener('input', () => {
       clipVideo.currentTime = Number(clipRange.value);
       updateClip();
@@ -1438,8 +1698,8 @@
       const duration = clipVideo.duration;
       const startTime = Number(clipRange.value);
       const endTime = Math.min(startTime + clipLength, duration);
-      if (!Number.isFinite(duration) || endTime <= startTime) {
-        showToast('Espera a que cargue el video y selecciona un tramo válido.');
+      if (!Number.isFinite(duration) || endTime - startTime < 15) {
+        showToast('Espera a que cargue un video de al menos 15 segundos y selecciona un tramo válido.');
         return;
       }
       let sourceUrl = clipVideo.currentSrc;
@@ -1452,7 +1712,7 @@
       button.classList.add('cursor-wait', 'opacity-60');
       try {
         if (uploadedVideoPath) {
-          const { data, error } = await supabaseClient.storage.from(mediaBucket).createSignedUrl(uploadedVideoPath, 3600);
+          const { data, error } = await supabaseClient.storage.from(videosBucket).createSignedUrl(uploadedVideoPath, 3600);
           if (error) throw new Error(`No se pudo acceder al video subido: ${error.message}`);
           sourceUrl = data.signedUrl;
         }
@@ -1478,18 +1738,24 @@
         if (uploadError) throw new Error(`No se pudo guardar el clip: ${uploadError.message}`);
         const { error: insertError } = await supabaseClient.from('media_clips').insert({
           user_id: currentUser.id,
+          video_id: uploadedVideoId,
           title: document.getElementById('clipCaption').value.trim() || 'Clip sin título',
           start_time: Math.floor(startTime),
-          end_time: Math.ceil(endTime),
+          end_time: Math.min(Math.floor(startTime) + clipLength, Math.ceil(endTime)),
           aspect_ratio: '9:16',
           clip_url: clipPath,
           status: 'ready'
         });
         if (insertError) {
-          await supabaseClient.storage.from(mediaBucket).remove([clipPath]);
-          throw new Error(`No se pudo guardar el clip en tu cuenta: ${insertError.message}`);
+          const { error: cleanupError } = await supabaseClient.storage.from(mediaBucket).remove([clipPath]);
+          const cleanupMessage = cleanupError ? ` No se pudo limpiar el archivo del clip: ${cleanupError.message}` : '';
+          throw new Error(`No se pudo guardar el clip en tu cuenta: ${insertError.message}${cleanupMessage}`);
         }
         showToast('Clip creado y guardado en tu cuenta.');
+        if (!channelProfileModal.classList.contains('hidden')
+            && channelProfileSubscribe.dataset.subscribeChannel === currentUser.id) {
+          loadChannelProfile(currentUser.id).catch(error => showToast(error.message || 'No se pudo actualizar el perfil del canal.'));
+        }
       } catch (error) {
         showToast(error.message || 'No se pudo crear el clip.');
       } finally {
