@@ -539,6 +539,7 @@
     const subscriberCounts = new Map();
     const busyChannels = new Set();
     const channelProfiles = new Map();
+    const channelVideosCache = new Map();
     let subscriptionRefreshVersion = 0;
     let channelProfileLoadVersion = 0;
     const emptyResults = document.getElementById('emptyResults');
@@ -1059,6 +1060,60 @@
       emptyMessage.classList.toggle('hidden', hasContent);
     }
 
+    function getLocalChannelVideos(channelId) {
+      const cachedVideos = channelVideosCache.get(channelId);
+      if (cachedVideos) return cachedVideos;
+      return [...videoGrid.querySelectorAll('.community-card')]
+        .filter(card => card.dataset.userId === channelId)
+        .map(card => {
+          const launch = card.querySelector('.video-launch');
+          return {
+            id: card.dataset.videoId,
+            user_id: channelId,
+            title: card.dataset.videoTitle,
+            description: card.dataset.videoDescription,
+            video_path: launch?.dataset.videoPath || '',
+            created_at: card.dataset.createdAt,
+            view_count: card.dataset.views,
+            visibility: card.dataset.visibility
+          };
+        });
+    }
+
+    async function queryChannelVideos(channelId) {
+      try {
+        const { data, error } = await supabaseClient.from('videos')
+          .select('*')
+          .or(`user_id.eq.${channelId},usuario_id.eq.${channelId}`);
+        if (error) throw error;
+        return Array.isArray(data) ? data.filter(Boolean) : [];
+      } catch (error) {
+        console.warn('No se pudieron consultar videos del canal con ambos campos de usuario:', error);
+      }
+
+      const results = await Promise.all(['user_id', 'usuario_id'].map(async userColumn => {
+        try {
+          const { data, error } = await supabaseClient.from('videos')
+            .select('*')
+            .eq(userColumn, channelId);
+          if (error) throw error;
+          return { data: Array.isArray(data) ? data.filter(Boolean) : [], error: null };
+        } catch (error) {
+          return { data: [], error };
+        }
+      }));
+      const successfulResults = results.filter(result => !result.error);
+      if (!successfulResults.length) {
+        console.warn('No se pudieron cargar los videos del canal desde Supabase:', results.map(result => result.error));
+        return null;
+      }
+      const videosById = new Map();
+      successfulResults.flatMap(result => result.data).forEach(video => {
+        if (video?.id) videosById.set(video.id, video);
+      });
+      return [...videosById.values()];
+    }
+
     async function loadChannelProfile(channelId) {
       const loadVersion = ++channelProfileLoadVersion;
       const videosPanel = document.getElementById('channelVideosPanel');
@@ -1076,7 +1131,7 @@
         description: metadata.description || metadata.bio || ''
       };
       let profile = fallbackProfile;
-      let videos = [];
+      let videos = getLocalChannelVideos(channelId);
       let clips = [];
       let subscriberCount = 0;
       const isOwnChannel = currentUser?.id === channelId;
@@ -1103,50 +1158,8 @@
         channelProfileModal.querySelector('[data-subscriber-count]').dataset.subscriberCount = channelId;
         updateChannelControls(channelId);
       };
-
-      try {
-        if (supabaseClient) {
-          const videosQuery = supabaseClient.from('videos')
-            .select('id, title, description, video_path, visibility, created_at, view_count')
-            .eq('user_id', channelId);
-          if (!isOwnChannel) videosQuery.eq('visibility', 'public');
-          const [
-            profileResult,
-            videosResult,
-            clipsResult
-          ] = await Promise.all([
-            supabaseClient.from('channel_profiles').select('display_name, avatar_url, description').eq('user_id', channelId).maybeSingle(),
-            videosQuery.order('created_at', { ascending: false }),
-            supabaseClient.from('media_clips').select('id, title, clip_url, video_id, created_at')
-              .eq('user_id', channelId).eq('status', 'ready').order('created_at', { ascending: false })
-          ]);
-          if (loadVersion !== channelProfileLoadVersion) return;
-          if (profileResult.error) {
-            console.warn('No se pudo cargar el perfil del canal desde Supabase:', profileResult.error);
-          } else if (profileResult.data) {
-            profile = {
-              ...fallbackProfile,
-              ...profileResult.data,
-              display_name: profileResult.data.display_name || fallbackProfile.display_name,
-              avatar_url: profileResult.data.avatar_url || fallbackProfile.avatar_url,
-              description: profileResult.data.description || fallbackProfile.description
-            };
-            channelProfiles.set(channelId, profile);
-          }
-          if (videosResult.error) {
-            console.warn('No se pudieron cargar los videos del canal desde Supabase:', videosResult.error);
-          } else {
-            videos = Array.isArray(videosResult.data) ? videosResult.data.filter(Boolean) : [];
-          }
-          if (clipsResult.error) {
-            console.warn('No se pudieron cargar los clips del canal desde Supabase:', clipsResult.error);
-          } else {
-            clips = Array.isArray(clipsResult.data) ? clipsResult.data.filter(Boolean) : [];
-          }
-          subscriberCount = await loadSubscriberCount(channelId);
-        }
-        if (loadVersion !== channelProfileLoadVersion) return;
-        renderProfileSummary();
+      const renderChannelVideos = () => {
+        videosPanel.replaceChildren();
         videos.forEach(video => {
           const title = video.title || 'Video sin título';
           const card = document.createElement('article');
@@ -1200,6 +1213,66 @@
           card.append(play, description, content);
           videosPanel.append(card);
         });
+      };
+
+      try {
+        renderProfileSummary();
+        renderChannelVideos();
+        setChannelProfileTab('videos');
+        if (supabaseClient) {
+          const profileRequest = Promise.resolve()
+            .then(() => supabaseClient.from('channel_profiles')
+              .select('display_name, avatar_url, description').eq('user_id', channelId).maybeSingle())
+            .catch(error => ({ data: null, error }));
+          const clipsRequest = Promise.resolve()
+            .then(() => supabaseClient.from('media_clips')
+              .select('id, title, clip_url, video_id, created_at')
+              .eq('user_id', channelId).eq('status', 'ready').order('created_at', { ascending: false }))
+            .catch(error => ({ data: null, error }));
+          const videosResult = await queryChannelVideos(channelId);
+          if (loadVersion !== channelProfileLoadVersion) return;
+          if (videosResult === null) {
+            videos = getLocalChannelVideos(channelId);
+          } else {
+            videos = videosResult
+              .map(video => ({
+                ...video,
+                user_id: video.user_id || video.usuario_id || channelId
+              }))
+              .filter(video => isOwnChannel
+                || video.visibility == null
+                || video.visibility === ''
+                || video.visibility === 'public')
+              .sort((first, second) => new Date(second.created_at || 0) - new Date(first.created_at || 0));
+            channelVideosCache.set(channelId, videos);
+          }
+          renderProfileSummary();
+          renderChannelVideos();
+          setChannelProfileTab('videos');
+
+          const [profileResult, clipsResult] = await Promise.all([profileRequest, clipsRequest]);
+          if (loadVersion !== channelProfileLoadVersion) return;
+          if (profileResult.error) {
+            console.warn('No se pudo cargar el perfil del canal desde Supabase:', profileResult.error);
+          } else if (profileResult.data) {
+            profile = {
+              ...fallbackProfile,
+              ...profileResult.data,
+              display_name: profileResult.data.display_name || fallbackProfile.display_name,
+              avatar_url: profileResult.data.avatar_url || fallbackProfile.avatar_url,
+              description: profileResult.data.description || fallbackProfile.description
+            };
+            channelProfiles.set(channelId, profile);
+          }
+          if (clipsResult.error) {
+            console.warn('No se pudieron cargar los clips del canal desde Supabase:', clipsResult.error);
+          } else {
+            clips = Array.isArray(clipsResult.data) ? clipsResult.data.filter(Boolean) : [];
+          }
+          subscriberCount = await loadSubscriberCount(channelId);
+        }
+        if (loadVersion !== channelProfileLoadVersion) return;
+        renderProfileSummary();
         for (const clip of clips) {
           if (!clip.clip_url) continue;
           try {
@@ -1233,10 +1306,10 @@
         console.warn('No se pudo cargar el perfil del canal; se mostrarán los datos locales disponibles:', error);
         if (loadVersion !== channelProfileLoadVersion) return;
         profile = fallbackProfile;
-        videos = [];
+        videos = getLocalChannelVideos(channelId);
         clips = [];
         subscriberCount = 0;
-        videosPanel.replaceChildren();
+        renderChannelVideos();
         clipsPanel.replaceChildren();
         renderProfileSummary();
         setChannelProfileTab('videos');
@@ -1288,46 +1361,59 @@
       });
     }
 
+    function isPublicVideo(video) {
+      return video.visibility == null || video.visibility === '' || video.visibility === 'public';
+    }
+
     async function loadPublishedVideos() {
       if (!supabaseClient) return;
       let videos = [];
+      let videosLoaded = false;
       try {
         const { data, error } = await supabaseClient
           .from('videos')
-          .select('id, user_id, title, description, video_path, created_at, view_count, visibility')
-          .eq('visibility', 'public')
-          .order('created_at', { ascending: false });
+          .select('*');
         if (error) {
           console.warn('No se pudieron cargar los videos públicos desde Supabase:', error);
         } else {
-          videos = Array.isArray(data) ? data.filter(Boolean) : [];
+          videosLoaded = true;
+          videos = Array.isArray(data)
+            ? data.filter(Boolean)
+              .filter(isPublicVideo)
+              .map(video => ({ ...video, user_id: video.user_id || video.usuario_id || '' }))
+              .sort((first, second) => new Date(second.created_at || 0) - new Date(first.created_at || 0))
+            : [];
         }
       } catch (error) {
         console.warn('No se pudieron cargar los videos públicos desde Supabase:', error);
       }
 
       const channelIds = [...new Set(videos.map(video => video.user_id).filter(Boolean))];
-      const counts = await Promise.all(channelIds.map(async channelId => [
-        channelId,
-        await loadSubscriberCount(channelId)
-      ]));
-      counts.forEach(([channelId, count]) => subscriberCounts.set(channelId, count));
-      try {
-        const { data, error } = channelIds.length
-          ? await supabaseClient.from('channel_profiles').select('user_id, display_name, avatar_url').in('user_id', channelIds)
-          : { data: [], error: null };
-        if (error) {
+      const channelDetailsPromise = (async () => {
+        const counts = await Promise.all(channelIds.map(async channelId => [
+          channelId,
+          await loadSubscriberCount(channelId)
+        ]));
+        counts.forEach(([channelId, count]) => subscriberCounts.set(channelId, count));
+        try {
+          const { data, error } = channelIds.length
+            ? await supabaseClient.from('channel_profiles').select('user_id, display_name, avatar_url').in('user_id', channelIds)
+            : { data: [], error: null };
+          if (error) {
+            console.warn('No se pudieron cargar los perfiles de los canales desde Supabase:', error);
+          } else if (Array.isArray(data)) {
+            data.forEach(profile => {
+              if (profile?.user_id) channelProfiles.set(profile.user_id, profile);
+            });
+          }
+        } catch (error) {
           console.warn('No se pudieron cargar los perfiles de los canales desde Supabase:', error);
-        } else if (Array.isArray(data)) {
-          data.forEach(profile => {
-            if (profile?.user_id) channelProfiles.set(profile.user_id, profile);
-          });
         }
-      } catch (error) {
-        console.warn('No se pudieron cargar los perfiles de los canales desde Supabase:', error);
-      }
+      })();
 
-      videoGrid.querySelectorAll('[data-database-video]').forEach(card => card.remove());
+      if (videosLoaded) {
+        videoGrid.querySelectorAll('[data-database-video]').forEach(card => card.remove());
+      }
       const fragment = document.createDocumentFragment();
       videos.forEach(video => {
         const card = document.createElement('article');
@@ -1404,8 +1490,41 @@
         fragment.append(card);
       });
       videoGrid.append(fragment);
-      channelIds.forEach(updateChannelControls);
       lucide.createIcons();
+      filterVideos(searchInputs[0]?.value || '');
+      await channelDetailsPromise;
+      channelIds.forEach(channelId => {
+        const profile = channelProfiles.get(channelId);
+        const channelName = profile?.display_name || `Canal · ${channelId.slice(0, 8)}`;
+        videoGrid.querySelectorAll(`[data-database-video][data-user-id="${CSS.escape(channelId)}"]`).forEach(card => {
+          card.dataset.channelName = channelName;
+          card.dataset.avatarUrl = profile?.avatar_url || '';
+          card.dataset.search = `${card.dataset.videoTitle} ${card.dataset.videoDescription} ${channelName}`.toLocaleLowerCase('es');
+          const profileButton = card.querySelector('[data-channel-profile]');
+          const profileName = profileButton?.lastElementChild;
+          if (profileButton && profileName) {
+            profileName.textContent = channelName;
+            const currentAvatar = profileButton.querySelector('img, span');
+            if (profile?.avatar_url) {
+              const avatar = document.createElement('img');
+              avatar.src = profile.avatar_url;
+              avatar.alt = '';
+              avatar.referrerPolicy = 'no-referrer';
+              avatar.className = 'h-7 w-7 rounded-full object-cover';
+              if (currentAvatar?.tagName === 'IMG') currentAvatar.replaceWith(avatar);
+              else profileButton.insertBefore(avatar, profileName);
+            } else if (currentAvatar?.tagName === 'IMG') {
+              const initial = document.createElement('span');
+              initial.className = 'grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ember/20 text-[10px] font-bold text-ember';
+              initial.textContent = Array.from(channelName)[0]?.toUpperCase() || 'C';
+              currentAvatar.replaceWith(initial);
+            } else if (currentAvatar) {
+              currentAvatar.textContent = Array.from(channelName)[0]?.toUpperCase() || 'C';
+            }
+          }
+        });
+        updateChannelControls(channelId);
+      });
       filterVideos(searchInputs[0]?.value || '');
     }
 
