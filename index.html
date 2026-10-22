@@ -3168,7 +3168,7 @@
       }
     }
 
-    async function refreshPersistentSocial(video, renderVersion = persistentSocialVersion) {
+    async function refreshPersistentSocial(video, renderVersion = persistentSocialVersion, includeComments = true) {
       if (renderVersion !== persistentSocialVersion || currentPlayback?.id !== video.id) return;
       const panel = playbackSocial;
       const userId = currentUser && uuidPattern.test(currentUser.id) ? currentUser.id : null;
@@ -3178,8 +3178,10 @@
         userId
           ? supabaseClient.from('video_reactions').select('vote').eq('video_id', video.id).eq('user_id', userId).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
-        supabaseClient.from('video_comments').select('id, user_id, content, created_at')
-          .eq('video_id', video.id).order('created_at', { ascending: true }),
+        includeComments
+          ? supabaseClient.from('video_comments').select('id, user_id, content, created_at')
+            .eq('video_id', video.id).order('created_at', { ascending: true })
+          : Promise.resolve({ data: null, error: null }),
         userId
           ? supabaseClient.from('video_bookmarks').select('video_id').eq('video_id', video.id).eq('user_id', userId).maybeSingle()
           : Promise.resolve({ data: null, error: null })
@@ -3190,7 +3192,7 @@
       if (renderVersion !== persistentSocialVersion
           || currentPlayback?.id !== video.id
           || (currentUser?.id || null) !== userId) return;
-      const comments = Array.isArray(commentsResult.data) ? commentsResult.data : [];
+      const comments = includeComments && Array.isArray(commentsResult.data) ? commentsResult.data : [];
       const authorIds = [...new Set(comments.map(comment => comment.user_id).filter(Boolean))];
       let authorProfiles = [];
       if (authorIds.length) {
@@ -3218,38 +3220,48 @@
       bookmarkButton.dataset.saved = String(Boolean(bookmarkResult.data));
       bookmarkButton.querySelector('[data-social-label]').textContent = bookmarkResult.data ? 'Guardado' : 'Guardar';
 
-      const list = panel.querySelector('[data-persistent-comments]');
-      list.replaceChildren();
-      comments.forEach(comment => {
-        const row = document.createElement('article');
-        row.className = 'border-b border-line py-4 last:border-0';
-        const header = document.createElement('div');
-        header.className = 'flex items-center justify-between gap-3';
-        const author = document.createElement('span');
-        author.className = 'text-xs font-semibold text-zinc-200';
-        author.textContent = authorNames.get(comment.user_id)
-          || (currentUser?.id === comment.user_id ? currentUser.user_metadata?.full_name || currentUser.email || 'Tú' : `Canal · ${comment.user_id.slice(0, 8)}`);
-        const date = document.createElement('time');
-        date.className = 'text-[11px] text-zinc-500';
-        date.dateTime = comment.created_at;
-        date.textContent = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(comment.created_at));
-        header.append(author, date);
-        if (currentUser?.id === comment.user_id || currentUser?.id === video.userId) {
-          const remove = document.createElement('button');
-          remove.type = 'button';
-          remove.dataset.deleteComment = comment.id;
-          remove.className = 'rounded-lg px-2 py-1 text-xs text-zinc-500 transition hover:text-rose-300';
-          remove.textContent = 'Eliminar';
-          remove.setAttribute('aria-label', 'Eliminar comentario');
-          header.append(remove);
-        }
-        const body = document.createElement('p');
-        body.className = 'mt-2 whitespace-pre-wrap break-words text-sm leading-5 text-zinc-300';
-        body.textContent = comment.content;
-        row.append(header, body);
-        list.append(row);
-      });
-      panel.querySelector('[data-persistent-comment-count]').textContent = String(comments.length);
+      if (includeComments) {
+        const list = panel.querySelector('[data-persistent-comments]');
+        const existingRows = new Map([...list.children]
+          .map(row => [row.dataset.persistentCommentId, row]));
+        const commentIds = new Set();
+        comments.forEach(comment => {
+          commentIds.add(comment.id);
+          if (existingRows.has(comment.id)) return;
+          const row = document.createElement('article');
+          row.dataset.persistentCommentId = comment.id;
+          row.className = 'border-b border-line py-4 last:border-0';
+          const header = document.createElement('div');
+          header.className = 'flex items-center justify-between gap-3';
+          const author = document.createElement('span');
+          author.className = 'text-xs font-semibold text-zinc-200';
+          author.textContent = authorNames.get(comment.user_id)
+            || (currentUser?.id === comment.user_id ? currentUser.user_metadata?.full_name || currentUser.email || 'Tú' : `Canal · ${comment.user_id.slice(0, 8)}`);
+          const date = document.createElement('time');
+          date.className = 'text-[11px] text-zinc-500';
+          date.dateTime = comment.created_at;
+          date.textContent = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(comment.created_at));
+          header.append(author, date);
+          if (currentUser?.id === comment.user_id || currentUser?.id === video.userId) {
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.dataset.deleteComment = comment.id;
+            remove.className = 'rounded-lg px-2 py-1 text-xs text-zinc-500 transition hover:text-rose-300';
+            remove.textContent = 'Eliminar';
+            remove.setAttribute('aria-label', 'Eliminar comentario');
+            header.append(remove);
+          }
+          const body = document.createElement('p');
+          body.className = 'mt-2 whitespace-pre-wrap break-words text-sm leading-5 text-zinc-300';
+          body.textContent = comment.content;
+          row.append(header, body);
+          list.append(row);
+        });
+        existingRows.forEach((row, id) => {
+          if (!commentIds.has(id)) row.remove();
+        });
+        panel.querySelector('[data-persistent-comment-count]').textContent = String(comments.length);
+      }
     }
 
     function renderPersistentSocial(video) {
@@ -3358,7 +3370,7 @@
               updated_at: new Date().toISOString()
             }, { onConflict: 'video_id,user_id' });
           if (result.error) throw result.error;
-          await refreshPersistentSocial(video);
+          await refreshPersistentSocial(video, persistentSocialVersion, false);
         } catch (error) {
           showToast(`No se pudo guardar tu voto: ${error.message || 'inténtalo de nuevo.'}`);
         } finally {
@@ -3529,51 +3541,46 @@
       container.append(form);
     }
 
+    function createCommentElement(comment, state, depth = 0) {
+      const row = document.createElement('article');
+      row.dataset.commentId = comment.id;
+      row.dataset.commentDepth = String(depth);
+      row.className = `mt-3 rounded-xl bg-panel/70 p-3${depth ? ' ml-3 border-l border-line sm:ml-5' : ''}`;
+      const header = document.createElement('div');
+      header.className = 'flex items-center justify-between gap-3';
+      const author = document.createElement('span');
+      author.className = 'text-xs font-semibold text-zinc-200';
+      author.textContent = 'Tú';
+      const body = document.createElement('p');
+      body.className = 'mt-2 break-words text-sm leading-5 text-zinc-300';
+      body.textContent = comment.text;
+      const actions = document.createElement('div');
+      actions.className = 'mt-2 flex items-center gap-4';
+      const like = document.createElement('button');
+      like.type = 'button';
+      like.dataset.socialAction = 'comment-like';
+      like.setAttribute('aria-pressed', String(comment.liked));
+      like.setAttribute('aria-label', comment.liked ? 'Quitar me gusta del comentario' : 'Me gusta este comentario');
+      like.className = `inline-flex items-center gap-1.5 text-xs transition hover:text-ember ${comment.liked ? 'text-ember' : 'text-zinc-500'}`;
+      like.innerHTML = `<i data-lucide="heart" class="h-3.5 w-3.5${comment.liked ? ' fill-current' : ''}"></i><span>${comment.likes}</span>`;
+      const reply = document.createElement('button');
+      reply.type = 'button';
+      reply.dataset.socialAction = 'reply';
+      reply.className = 'inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-white';
+      reply.innerHTML = '<i data-lucide="reply" class="h-3.5 w-3.5"></i>Responder';
+      actions.append(like, reply);
+      header.append(author);
+      row.append(header, body, actions);
+      if (state.replyingTo === comment.id) appendCommentForm(row, comment.id);
+      comment.replies.forEach(child => row.append(createCommentElement(child, state, depth + 1)));
+      return row;
+    }
+
     function renderComments(item, state) {
       const list = item.querySelector('[data-social-comments]');
       const count = item.querySelector('[data-social-comment-count]');
-      list.replaceChildren();
+      list.replaceChildren(...state.comments.map(comment => createCommentElement(comment, state)));
       count.textContent = String(countComments(state.comments));
-
-      function appendComment(comment, container, depth = 0) {
-        const row = document.createElement('article');
-        row.dataset.commentId = comment.id;
-        row.className = `mt-3 rounded-xl bg-panel/70 p-3${depth ? ' ml-3 border-l border-line sm:ml-5' : ''}`;
-        const header = document.createElement('div');
-        header.className = 'flex items-center justify-between gap-3';
-        const author = document.createElement('span');
-        author.className = 'text-xs font-semibold text-zinc-200';
-        author.textContent = 'Tú';
-        const body = document.createElement('p');
-        body.className = 'mt-2 break-words text-sm leading-5 text-zinc-300';
-        body.textContent = comment.text;
-        const actions = document.createElement('div');
-        actions.className = 'mt-2 flex items-center gap-4';
-        const like = document.createElement('button');
-        like.type = 'button';
-        like.dataset.socialAction = 'comment-like';
-        like.setAttribute('aria-pressed', String(comment.liked));
-        like.setAttribute('aria-label', comment.liked ? 'Quitar me gusta del comentario' : 'Me gusta este comentario');
-        like.className = `inline-flex items-center gap-1.5 text-xs transition hover:text-ember ${comment.liked ? 'text-ember' : 'text-zinc-500'}`;
-        like.innerHTML = `<i data-lucide="heart" class="h-3.5 w-3.5${comment.liked ? ' fill-current' : ''}"></i><span>${comment.likes}</span>`;
-        const reply = document.createElement('button');
-        reply.type = 'button';
-        reply.dataset.socialAction = 'reply';
-        reply.className = 'inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-white';
-        reply.innerHTML = '<i data-lucide="reply" class="h-3.5 w-3.5"></i>Responder';
-        actions.append(like, reply);
-        header.append(author);
-        row.append(header, body, actions);
-        if (state.replyingTo === comment.id) appendCommentForm(row, comment.id);
-        comment.replies.forEach(child => appendComment(child, row, depth + 1));
-        container.append(row);
-      }
-
-      state.comments.forEach(comment => appendComment(comment, list));
-      if (state.replyingTo === null) {
-        const form = item.querySelector('[data-social-comment-form]');
-        if (form?.dataset.parentId) form.remove();
-      }
       lucide.createIcons();
     }
 
@@ -3658,14 +3665,18 @@
         }
         if (action === 'reply') {
           const commentId = commentRow.dataset.commentId;
+          panel.querySelector('[data-social-comment-form][data-parent-id]')?.remove();
           state.replyingTo = state.replyingTo === commentId ? null : commentId;
-          renderComments(panel, state);
-          if (state.replyingTo) panel.querySelector(`[data-parent-id="${state.replyingTo}"] input`)?.focus();
+          if (state.replyingTo) {
+            appendCommentForm(commentRow, commentId);
+            commentRow.querySelector(`[data-parent-id="${CSS.escape(commentId)}"] input`)?.focus();
+            lucide.createIcons();
+          }
           return;
         }
         if (action === 'cancel-reply') {
           state.replyingTo = null;
-          renderComments(panel, state);
+          button.closest('form').remove();
           return;
         }
         if (action === 'comment-like') {
@@ -3674,7 +3685,12 @@
           if (!comment) return;
           comment.liked = !comment.liked;
           comment.likes += comment.liked ? 1 : -1;
-          renderComments(panel, state);
+          button.setAttribute('aria-pressed', String(comment.liked));
+          button.setAttribute('aria-label', comment.liked ? 'Quitar me gusta del comentario' : 'Me gusta este comentario');
+          button.classList.toggle('text-ember', comment.liked);
+          button.classList.toggle('text-zinc-500', !comment.liked);
+          button.querySelector('i').classList.toggle('fill-current', comment.liked);
+          button.querySelector('span').textContent = String(comment.likes);
         }
       });
 
@@ -3688,15 +3704,26 @@
         if (!text) return;
         const comment = { id: `comment-${nextCommentId++}`, text, likes: 0, liked: false, replies: [] };
         const parentId = form.dataset.parentId;
+        const parentRow = parentId
+          ? panel.querySelector(`[data-comment-id="${CSS.escape(parentId)}"]`)
+          : null;
         if (parentId) {
           const parent = findComment(state.comments, parentId);
-          if (!parent) return;
+          if (!parent || !parentRow) return;
           parent.replies.push(comment);
         } else {
           state.comments.push(comment);
         }
+        const row = createCommentElement(comment, state, parentId ? Number(parentRow.dataset.commentDepth) + 1 : 0);
+        if (parentId) {
+          parentRow.querySelector('[data-social-comment-form]')?.remove();
+          parentRow.append(row);
+        } else {
+          panel.querySelector('[data-social-comments]').append(row);
+        }
         state.replyingTo = null;
-        renderComments(panel, state);
+        panel.querySelector('[data-social-comment-count]').textContent = String(countComments(state.comments));
+        lucide.createIcons();
       });
 
       renderComments(panel, state);
