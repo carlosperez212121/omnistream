@@ -196,23 +196,38 @@
             <video id="mainPlayerVideo" class="block aspect-video w-full bg-black object-contain" controls playsinline preload="metadata">
               Tu navegador no admite la reproducción de video.
             </video>
-            <div id="touchPlaybackControls" class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity duration-200" aria-label="Controles de reproducción" aria-hidden="true">
-              <div class="pointer-events-auto flex items-center gap-4">
-                <button id="previousVideoButton" type="button" class="grid h-12 w-12 place-items-center rounded-full bg-black/65 text-2xl text-white shadow-lg transition hover:bg-black/85 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Video anterior" title="Video anterior">⏮</button>
-                <button id="touchPlayPauseButton" type="button" class="grid h-16 w-16 place-items-center rounded-full bg-white/90 text-3xl text-ink shadow-lg transition hover:bg-white" aria-label="Pausar video" title="Pausar o reproducir">⏯</button>
-                <button id="nextVideoButton" type="button" class="grid h-12 w-12 place-items-center rounded-full bg-black/65 text-2xl text-white shadow-lg transition hover:bg-black/85 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Siguiente video" title="Siguiente video">⏭</button>
-              </div>
-            </div>
           </div>
           <section class="mt-4 rounded-2xl border border-line bg-panel/80 p-4" aria-labelledby="playbackQueueTitle">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <h2 id="playbackQueueTitle" class="text-sm font-semibold text-white">Siguientes videos a reproducir</h2>
-              <button id="autoplayToggle" type="button" role="switch" aria-checked="false" class="inline-flex items-center gap-2 rounded-full border border-line px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-ember/50 hover:text-white">
-                <span id="autoplayIndicator" class="h-2 w-2 rounded-full bg-zinc-500"></span>
-                <span id="autoplayLabel">Autoplay: Desactivado</span>
+              <div class="flex flex-wrap items-center gap-2">
+                <button id="previousVideoButton" type="button" class="rounded-full border border-line px-3 py-2 text-xs font-semibold text-zinc-300 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Video anterior">Anterior</button>
+                <button id="nextVideoButton" type="button" class="rounded-full border border-line px-3 py-2 text-xs font-semibold text-zinc-300 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Siguiente video">Siguiente</button>
+                <button id="autoplayToggle" type="button" role="switch" aria-checked="false" class="inline-flex items-center gap-2 rounded-full border border-line px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-ember/50 hover:text-white">
+                  <span id="autoplayIndicator" class="h-2 w-2 rounded-full bg-zinc-500"></span>
+                  <span id="autoplayLabel">Autoplay: Desactivado</span>
+                </button>
+              </div>
+            </div>
+            <div id="playbackQueue" class="mt-4 flex gap-3 overflow-x-auto pb-1" aria-live="polite">
+              <button type="button" data-queue-card class="hidden w-36 shrink-0 text-left" aria-label="Reproducir video siguiente">
+                <img data-slot-thumbnail class="aspect-video w-full rounded-lg bg-gradient-to-br from-sky-950 to-emerald-900 object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
+                <span data-slot-title class="mt-2 block truncate text-xs font-semibold text-white"></span>
+              </button>
+              <button type="button" data-queue-card class="hidden w-36 shrink-0 text-left" aria-label="Reproducir video siguiente">
+                <img data-slot-thumbnail class="aspect-video w-full rounded-lg bg-gradient-to-br from-sky-950 to-emerald-900 object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
+                <span data-slot-title class="mt-2 block truncate text-xs font-semibold text-white"></span>
+              </button>
+              <button type="button" data-queue-card class="hidden w-36 shrink-0 text-left" aria-label="Reproducir video siguiente">
+                <img data-slot-thumbnail class="aspect-video w-full rounded-lg bg-gradient-to-br from-sky-950 to-emerald-900 object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
+                <span data-slot-title class="mt-2 block truncate text-xs font-semibold text-white"></span>
+              </button>
+              <button type="button" data-queue-card class="hidden w-36 shrink-0 text-left" aria-label="Reproducir video siguiente">
+                <img data-slot-thumbnail class="aspect-video w-full rounded-lg bg-gradient-to-br from-sky-950 to-emerald-900 object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
+                <span data-slot-title class="mt-2 block truncate text-xs font-semibold text-white"></span>
               </button>
             </div>
-            <div id="playbackQueue" class="mt-4 flex gap-3 overflow-x-auto pb-1" aria-live="polite"></div>
+            <p id="playbackQueueEmpty" class="mt-4 hidden text-xs text-zinc-500">No hay más videos en la lista actual.</p>
           </section>
           <div class="mt-5 flex flex-wrap items-start justify-between gap-3">
             <h1 id="playbackTitle" class="text-xl font-bold leading-7 text-white sm:text-2xl">Video</h1>
@@ -242,7 +257,33 @@
         </div>
         <aside aria-labelledby="recommendedTitle">
           <h2 id="recommendedTitle" class="mb-4 text-lg font-semibold text-white">Videos sugeridos</h2>
-          <div id="recommendedVideos" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1"></div>
+          <div id="recommendedVideos" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <article data-recommended-slot class="hidden flex gap-3">
+              <button type="button" data-recommended-card class="poster relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-sky-950 to-emerald-900" aria-label="Reproducir video sugerido">
+                <img data-slot-thumbnail class="absolute inset-0 h-full w-full object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
+              </button>
+              <div class="min-w-0 py-1"><h3 data-slot-title class="line-clamp-2 text-sm font-semibold leading-5 text-white"></h3></div>
+            </article>
+            <article data-recommended-slot class="hidden flex gap-3">
+              <button type="button" data-recommended-card class="poster relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-sky-950 to-emerald-900" aria-label="Reproducir video sugerido">
+                <img data-slot-thumbnail class="absolute inset-0 h-full w-full object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
+              </button>
+              <div class="min-w-0 py-1"><h3 data-slot-title class="line-clamp-2 text-sm font-semibold leading-5 text-white"></h3></div>
+            </article>
+            <article data-recommended-slot class="hidden flex gap-3">
+              <button type="button" data-recommended-card class="poster relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-sky-950 to-emerald-900" aria-label="Reproducir video sugerido">
+                <img data-slot-thumbnail class="absolute inset-0 h-full w-full object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
+              </button>
+              <div class="min-w-0 py-1"><h3 data-slot-title class="line-clamp-2 text-sm font-semibold leading-5 text-white"></h3></div>
+            </article>
+            <article data-recommended-slot class="hidden flex gap-3">
+              <button type="button" data-recommended-card class="poster relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-sky-950 to-emerald-900" aria-label="Reproducir video sugerido">
+                <img data-slot-thumbnail class="absolute inset-0 h-full w-full object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
+              </button>
+              <div class="min-w-0 py-1"><h3 data-slot-title class="line-clamp-2 text-sm font-semibold leading-5 text-white"></h3></div>
+            </article>
+          </div>
+          <p id="recommendedVideosEmpty" class="hidden rounded-xl border border-line p-4 text-sm text-zinc-400">No hay más videos para recomendar por ahora.</p>
         </aside>
       </div>
     </section>
@@ -686,10 +727,10 @@
     const playbackSocial = document.getElementById('playbackSocial');
     const recommendedVideos = document.getElementById('recommendedVideos');
     const playbackQueue = document.getElementById('playbackQueue');
-    const touchPlaybackControls = document.getElementById('touchPlaybackControls');
+    const recommendedVideosEmpty = document.getElementById('recommendedVideosEmpty');
+    const playbackQueueEmpty = document.getElementById('playbackQueueEmpty');
     const autoplayToggle = document.getElementById('autoplayToggle');
     let autoplayEnabled = false;
-    let touchControlsTimer;
     let currentPlayback = null;
     const playbackEditVideo = document.getElementById('playbackEditVideo');
     const editVideoModal = document.getElementById('editVideoModal');
@@ -978,17 +1019,13 @@
       }
       playbackView.scrollIntoView({ behavior: 'smooth', block: 'start' });
       mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.'));
-      showTouchPlaybackControls();
     }
     function closeMainPlayer() {
-      clearTimeout(touchControlsTimer);
-      touchPlaybackControls.classList.add('invisible', 'opacity-0');
-      touchPlaybackControls.classList.remove('opacity-100');
-      touchPlaybackControls.setAttribute('aria-hidden', 'true');
       releaseVideoResources(mainPlayerVideo);
       mainPlayerVideo.removeAttribute('poster');
       currentPlayback = null;
-      playbackQueue.replaceChildren();
+      renderPlaybackQueue();
+      renderRecommendedVideos(null);
       updatePlaybackEditButton();
       playbackView.classList.add('hidden');
       document.getElementById('videosPanel').classList.remove('playback-active');
@@ -1005,42 +1042,39 @@
     }
 
     function renderPlaybackQueue() {
-      playbackQueue.replaceChildren();
-      const upcoming = getPlaybackQueueCards().slice(0, 8);
-      if (!upcoming.length) {
-        const empty = document.createElement('p');
-        empty.className = 'text-xs text-zinc-500';
-        empty.textContent = 'No hay más videos en la lista actual.';
-        playbackQueue.append(empty);
-        return;
-      }
-      upcoming.forEach(card => {
-        const launch = card.querySelector('.video-launch');
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.dataset.queueCard = card.dataset.cardKey;
-        button.className = 'w-36 shrink-0 text-left';
-        const thumbnail = document.createElement('span');
-        thumbnail.className = 'relative block aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-sky-950 to-emerald-900';
-        thumbnail.style.backgroundImage = launch?.style.backgroundImage || '';
-        const thumbnailUrl = launch?.dataset.thumbnailUrl || '';
-        if (thumbnailUrl) {
-          const image = document.createElement('img');
-          image.src = thumbnailUrl;
-          image.loading = 'lazy';
-          image.alt = '';
-          image.className = 'absolute inset-0 h-full w-full object-cover';
-          image.referrerPolicy = 'no-referrer';
-          thumbnail.append(image);
+      const upcoming = getPlaybackQueueCards().slice(0, 4);
+      renderVideoSlots(playbackQueue, upcoming, 'button[data-queue-card]', 'queueCard');
+      playbackQueueEmpty.classList.toggle('hidden', upcoming.length > 0);
+    }
+
+    function renderVideoSlots(container, cards, slotSelector, datasetKey) {
+      const slots = container.querySelectorAll(slotSelector);
+      slots.forEach((slot, index) => {
+        const button = slot.matches('button') ? slot : slot.querySelector('button');
+        const thumbnail = slot.querySelector('[data-slot-thumbnail]');
+        const title = slot.querySelector('[data-slot-title]');
+        const card = cards[index];
+        slot.classList.toggle('hidden', !card);
+        if (!card) {
+          if (button) button.dataset[datasetKey] = '';
+          if (thumbnail?.hasAttribute('src')) thumbnail.removeAttribute('src');
+          if (thumbnail) thumbnail.style.backgroundImage = '';
+          if (title) title.textContent = '';
+          return;
         }
-        const title = document.createElement('span');
-        title.className = 'mt-2 block truncate text-xs font-semibold text-white';
-        title.textContent = card.dataset.videoTitle || 'Video';
-        const channel = document.createElement('span');
-        channel.className = 'block truncate text-[11px] text-zinc-500';
-        channel.textContent = card.dataset.channelName || 'Canal de la comunidad';
-        button.append(thumbnail, title, channel);
-        playbackQueue.append(button);
+        const launch = card.querySelector('.video-launch');
+        const titleText = card.dataset.videoTitle || card.querySelector('h3')?.textContent.trim() || 'Video';
+        const thumbnailUrl = launch?.dataset.thumbnailUrl || launch?.dataset.generatedThumbnailUrl || '';
+        if (button) {
+          button.dataset[datasetKey] = card.dataset.cardKey;
+          button.setAttribute('aria-label', `Reproducir ${titleText}`);
+        }
+        if (thumbnail && thumbnail.getAttribute('src') !== thumbnailUrl) {
+          if (thumbnailUrl) thumbnail.setAttribute('src', thumbnailUrl);
+          else thumbnail.removeAttribute('src');
+        }
+        if (thumbnail) thumbnail.style.backgroundImage = thumbnailUrl ? '' : launch?.style.backgroundImage || '';
+        if (title) title.textContent = titleText;
       });
     }
 
@@ -1060,42 +1094,11 @@
       if (target) await playCommunityCard(target);
     }
 
-    function hideTouchPlaybackControls() {
-      clearTimeout(touchControlsTimer);
-      touchPlaybackControls.classList.add('invisible', 'opacity-0');
-      touchPlaybackControls.classList.remove('opacity-100');
-      touchPlaybackControls.setAttribute('aria-hidden', 'true');
-    }
-
-    function showTouchPlaybackControls() {
-      clearTimeout(touchControlsTimer);
-      touchPlaybackControls.classList.remove('invisible', 'opacity-0');
-      touchPlaybackControls.classList.add('opacity-100');
-      touchPlaybackControls.setAttribute('aria-hidden', 'false');
-      touchControlsTimer = setTimeout(hideTouchPlaybackControls, 3000);
-    }
-
-    function toggleTouchPlaybackControls() {
-      if (touchPlaybackControls.classList.contains('invisible')) showTouchPlaybackControls();
-      else hideTouchPlaybackControls();
-    }
-
-    document.getElementById('mainPlayerVideo').addEventListener('click', toggleTouchPlaybackControls);
-    document.getElementById('mainPlayerVideo').addEventListener('pointermove', showTouchPlaybackControls);
-    touchPlaybackControls.addEventListener('click', event => event.stopPropagation());
     document.getElementById('previousVideoButton').addEventListener('click', () => {
       playAdjacentVideo(-1).catch(error => showToast(error.message || 'No se pudo reproducir el video anterior.'));
     });
     document.getElementById('nextVideoButton').addEventListener('click', () => {
       playAdjacentVideo(1).catch(error => showToast(error.message || 'No se pudo reproducir el siguiente video.'));
-    });
-    document.getElementById('touchPlayPauseButton').addEventListener('click', () => {
-      if (mainPlayerVideo.paused) {
-        mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video.'));
-      } else {
-        mainPlayerVideo.pause();
-      }
-      showTouchPlaybackControls();
     });
     playbackQueue.addEventListener('click', event => {
       const button = event.target.closest('button[data-queue-card]');
@@ -1176,12 +1179,6 @@
     });
     mainPlayerVideo.addEventListener('error', () => showToast('No se pudo cargar este video. Comprueba tu conexión e inténtalo de nuevo.'));
     mainPlayerVideo.addEventListener('play', () => document.getElementById('radioAudio').pause());
-    mainPlayerVideo.addEventListener('play', () => {
-      document.getElementById('touchPlayPauseButton').setAttribute('aria-label', 'Pausar video');
-    });
-    mainPlayerVideo.addEventListener('pause', () => {
-      document.getElementById('touchPlayPauseButton').setAttribute('aria-label', 'Reproducir video');
-    });
     mainPlayerVideo.addEventListener('ended', () => {
       if (!autoplayEnabled) return;
       playAdjacentVideo(1).catch(error => showToast(error.message || 'No se pudo reproducir el siguiente video.'));
@@ -3107,49 +3104,11 @@
     }
 
     function renderRecommendedVideos(currentKey) {
-      recommendedVideos.replaceChildren();
-      const suggestions = [...videoGrid.querySelectorAll('.community-card')]
+      const suggestions = currentKey ? [...videoGrid.querySelectorAll('.community-card')]
         .filter(card => !card.classList.contains('hidden') && card.dataset.cardKey !== String(currentKey))
-        .slice(0, 8);
-      if (!suggestions.length) {
-        const empty = document.createElement('p');
-        empty.className = 'rounded-xl border border-line p-4 text-sm text-zinc-400';
-        empty.textContent = 'No hay más videos para recomendar por ahora.';
-        recommendedVideos.append(empty);
-        return;
-      }
-      suggestions.forEach(card => {
-        const item = document.createElement('article');
-        item.className = 'flex gap-3';
-        const launch = card.querySelector('.video-launch');
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.dataset.recommendedCard = card.dataset.cardKey;
-        button.className = 'poster relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-sky-950 to-emerald-900';
-        button.style.backgroundImage = launch?.style.backgroundImage || '';
-        addVideoPreview(
-          button,
-          launch?.dataset.thumbnailUrl || '',
-          launch?.dataset.previewVideoUrl || launch?.querySelector('video')?.src || '',
-          'absolute inset-0 h-full w-full object-cover'
-        );
-        button.setAttribute('aria-label', `Reproducir ${card.dataset.videoTitle}`);
-        const title = document.createElement('span');
-        title.className = 'sr-only';
-        title.textContent = card.dataset.videoTitle;
-        button.append(title);
-        const details = document.createElement('div');
-        details.className = 'min-w-0 py-1';
-        const heading = document.createElement('h3');
-        heading.className = 'line-clamp-2 text-sm font-semibold leading-5 text-white';
-        heading.textContent = card.dataset.videoTitle;
-        const channel = document.createElement('p');
-        channel.className = 'mt-1 truncate text-xs text-zinc-500';
-        channel.textContent = card.dataset.channelName || card.querySelector('p')?.textContent.split('·')[0].trim() || 'Canal de la comunidad';
-        details.append(heading, channel);
-        item.append(button, details);
-        recommendedVideos.append(item);
-      });
+        .slice(0, 4) : [];
+      renderVideoSlots(recommendedVideos, suggestions, '[data-recommended-slot]', 'recommendedCard');
+      recommendedVideosEmpty.classList.toggle('hidden', suggestions.length > 0);
     }
 
     async function toggleVideoBookmark(videoId, demoKey = null) {
