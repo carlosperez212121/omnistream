@@ -144,7 +144,7 @@
           </div>
           <div class="hidden justify-self-end lg:block">
             <div class="w-56 rotate-2 overflow-hidden rounded-2xl border border-white/20 shadow-2xl shadow-black/60">
-              <img class="h-80 w-full object-cover" src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=600&q=85" alt="Olas rompiendo en una costa al atardecer">
+              <img class="h-80 w-full object-cover" src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=600&q=85" alt="Olas rompiendo en una costa al atardecer" loading="lazy">
               <div class="bg-[#171719] p-4"><p class="text-xs font-bold uppercase tracking-widest text-gold">Una producción original</p><p class="mt-1 text-sm font-semibold text-white">Donde termina la marea</p></div>
             </div>
           </div>
@@ -201,7 +201,7 @@
           <p class="mt-2 text-sm text-zinc-400"><span id="playbackViews">0 vistas</span><span aria-hidden="true"> · </span><time id="playbackDate"></time></p>
           <div class="mt-5 flex flex-wrap items-center justify-between gap-4 border-y border-line py-4">
             <button id="playbackChannel" type="button" class="flex min-w-0 items-center gap-3 text-left transition hover:opacity-80" aria-label="Ver perfil del canal">
-              <img id="playbackAvatar" class="hidden h-11 w-11 rounded-full object-cover" alt="">
+              <img id="playbackAvatar" class="hidden h-11 w-11 rounded-full object-cover" alt="" loading="lazy">
               <span id="playbackInitials" class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ember/20 text-sm font-bold text-ember">C</span>
               <span class="min-w-0">
                 <span id="playbackChannelName" class="block truncate text-sm font-semibold text-white">Canal</span>
@@ -251,7 +251,7 @@
           <input id="videoThumbnailUrl" type="url" maxlength="2048" class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="https://ejemplo.com/portada.jpg">
         </label>
         <div class="max-w-sm overflow-hidden rounded-xl border border-line bg-ink">
-          <img id="videoThumbnailPreview" class="hidden aspect-video w-full object-cover" alt="Vista previa de la portada del video">
+          <img id="videoThumbnailPreview" class="hidden aspect-video w-full object-cover" alt="Vista previa de la portada del video" loading="lazy">
           <video id="videoThumbnailFallback" class="hidden aspect-video w-full object-cover" muted playsinline preload="metadata" aria-label="Primer fotograma del video"></video>
         </div>
         <label class="block text-xs font-medium text-zinc-300">Visibilidad
@@ -442,7 +442,7 @@
     <section class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-panel p-6 shadow-2xl sm:p-8">
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-center gap-4">
-          <img id="channelProfileAvatar" class="hidden h-16 w-16 rounded-full object-cover" alt="">
+          <img id="channelProfileAvatar" class="hidden h-16 w-16 rounded-full object-cover" alt="" loading="lazy">
           <span id="channelProfileInitials" class="grid h-16 w-16 place-items-center rounded-full bg-ember/20 text-xl font-bold text-ember">C</span>
           <div>
             <p class="text-[10px] font-bold uppercase tracking-widest text-mint">Perfil del canal</p>
@@ -589,7 +589,18 @@
     let activeFilter = 'all';
     let toastTimer;
 
+    function releaseVideoResources(video) {
+      if (!(video instanceof HTMLVideoElement)) return;
+      video.pause();
+      video.removeAttribute('src');
+      video.querySelectorAll('source').forEach(source => source.removeAttribute('src'));
+      video.load();
+    }
+
     function activateTab(tabName) {
+      if (tabName !== 'videos') {
+        document.querySelectorAll('#clipper video').forEach(releaseVideoResources);
+      }
       document.querySelectorAll('[data-tab-panel]').forEach(panel => {
         const active = panel.dataset.tabPanel === tabName;
         panel.classList.toggle('hidden', !active);
@@ -704,6 +715,7 @@
     function addVideoPreview(container, imageUrl, videoUrl, className = '') {
       if (imageUrl) {
         const image = document.createElement('img');
+        image.loading = 'lazy';
         image.src = imageUrl;
         image.alt = '';
         image.className = className;
@@ -885,6 +897,7 @@
     function openMainPlayer(source, video) {
       currentPlayback = video;
       updatePlaybackEditButton();
+      releaseVideoResources(mainPlayerVideo);
       mainPlayerVideo.src = source;
       if (video.thumbnailPreviewUrl || video.thumbnailUrl) mainPlayerVideo.poster = video.thumbnailPreviewUrl || video.thumbnailUrl;
       else mainPlayerVideo.removeAttribute('poster');
@@ -937,10 +950,8 @@
       mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.'));
     }
     function closeMainPlayer() {
-      mainPlayerVideo.pause();
-      mainPlayerVideo.removeAttribute('src');
+      releaseVideoResources(mainPlayerVideo);
       mainPlayerVideo.removeAttribute('poster');
-      mainPlayerVideo.load();
       currentPlayback = null;
       updatePlaybackEditButton();
       playbackView.classList.add('hidden');
@@ -1127,6 +1138,7 @@
         const avatarUrl = user.user_metadata?.avatar_url;
         if (avatarUrl) {
           const avatar = document.createElement('img');
+          avatar.loading = 'lazy';
           avatar.src = avatarUrl;
           avatar.alt = '';
           avatar.referrerPolicy = 'no-referrer';
@@ -1329,6 +1341,16 @@
       });
       document.querySelectorAll('[data-channel-panel]').forEach(panel => {
         const active = panel.dataset.channelPanel === tabName;
+        panel.querySelectorAll('video').forEach(video => {
+          if (active) {
+            if (!video.getAttribute('src') && video.dataset.videoSrc) {
+              video.src = video.dataset.videoSrc;
+              video.load();
+            }
+          } else {
+            releaseVideoResources(video);
+          }
+        });
         panel.classList.toggle('hidden', !active);
         panel.setAttribute('aria-hidden', String(!active));
       });
@@ -1582,6 +1604,7 @@
             video.controls = true;
             video.playsInline = true;
             video.preload = 'metadata';
+            video.dataset.videoSrc = data.signedUrl;
             video.setAttribute('aria-label', clip.title || 'Clip del canal');
             video.src = data.signedUrl;
             const title = document.createElement('p');
@@ -1629,6 +1652,7 @@
     }
 
     function closeChannelProfile() {
+      channelProfileModal.querySelectorAll('video').forEach(releaseVideoResources);
       channelProfileModal.classList.add('hidden');
       channelProfileModal.classList.remove('flex');
     }
@@ -1761,6 +1785,7 @@
         profileButton.className = 'inline-flex min-w-0 items-center gap-2 text-xs text-zinc-400 transition hover:text-white';
         if (profile?.avatar_url) {
           const profileAvatar = document.createElement('img');
+          profileAvatar.loading = 'lazy';
           profileAvatar.src = profile.avatar_url;
           profileAvatar.alt = '';
           profileAvatar.referrerPolicy = 'no-referrer';
@@ -1811,6 +1836,7 @@
             const currentAvatar = profileButton.querySelector('img, span');
             if (profile?.avatar_url) {
               const avatar = document.createElement('img');
+              avatar.loading = 'lazy';
               avatar.src = profile.avatar_url;
               avatar.alt = '';
               avatar.referrerPolicy = 'no-referrer';
@@ -2523,6 +2549,7 @@
       document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     document.getElementById('skipClipper').addEventListener('click', () => {
+      document.querySelectorAll('#clipper video').forEach(releaseVideoResources);
       document.getElementById('clipper').classList.add('hidden');
       if (currentUser && uuidPattern.test(currentUser.id)) {
         openChannelProfile(currentUser.id);
@@ -2533,6 +2560,7 @@
     });
     document.getElementById('skipClipOffer').addEventListener('click', async () => {
       closeClipOffer();
+      document.querySelectorAll('#clipper video').forEach(releaseVideoResources);
       document.getElementById('clipper').classList.add('hidden');
       try {
         await loadPublishedVideos();
