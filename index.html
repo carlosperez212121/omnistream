@@ -192,9 +192,28 @@
       </button>
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div class="min-w-0">
-          <video id="mainPlayerVideo" class="block aspect-video w-full rounded-2xl bg-black object-contain" controls playsinline preload="metadata">
-            Tu navegador no admite la reproducción de video.
-          </video>
+          <div id="mainPlayerStage" class="group relative overflow-hidden rounded-2xl bg-black">
+            <video id="mainPlayerVideo" class="block aspect-video w-full bg-black object-contain" controls playsinline preload="metadata">
+              Tu navegador no admite la reproducción de video.
+            </video>
+            <div id="touchPlaybackControls" class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity duration-200" aria-label="Controles de reproducción" aria-hidden="true">
+              <div class="pointer-events-auto flex items-center gap-4">
+                <button id="previousVideoButton" type="button" class="grid h-12 w-12 place-items-center rounded-full bg-black/65 text-2xl text-white shadow-lg transition hover:bg-black/85 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Video anterior" title="Video anterior">⏮</button>
+                <button id="touchPlayPauseButton" type="button" class="grid h-16 w-16 place-items-center rounded-full bg-white/90 text-3xl text-ink shadow-lg transition hover:bg-white" aria-label="Pausar video" title="Pausar o reproducir">⏯</button>
+                <button id="nextVideoButton" type="button" class="grid h-12 w-12 place-items-center rounded-full bg-black/65 text-2xl text-white shadow-lg transition hover:bg-black/85 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Siguiente video" title="Siguiente video">⏭</button>
+              </div>
+            </div>
+          </div>
+          <section class="mt-4 rounded-2xl border border-line bg-panel/80 p-4" aria-labelledby="playbackQueueTitle">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 id="playbackQueueTitle" class="text-sm font-semibold text-white">Siguientes videos a reproducir</h2>
+              <button id="autoplayToggle" type="button" role="switch" aria-checked="false" class="inline-flex items-center gap-2 rounded-full border border-line px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-ember/50 hover:text-white">
+                <span id="autoplayIndicator" class="h-2 w-2 rounded-full bg-zinc-500"></span>
+                <span id="autoplayLabel">Autoplay: Desactivado</span>
+              </button>
+            </div>
+            <div id="playbackQueue" class="mt-4 flex gap-3 overflow-x-auto pb-1" aria-live="polite"></div>
+          </section>
           <div class="mt-5 flex flex-wrap items-start justify-between gap-3">
             <h1 id="playbackTitle" class="text-xl font-bold leading-7 text-white sm:text-2xl">Video</h1>
           </div>
@@ -634,6 +653,10 @@
         if (matchesQuery && matchesFilter) visible++;
       });
       emptyResults.classList.toggle('hidden', visible > 0);
+      if (currentPlayback) {
+        renderPlaybackQueue();
+        updatePlaybackNavigation();
+      }
     }
 
     searchInputs.forEach(input => input.addEventListener('input', event => {
@@ -662,6 +685,11 @@
     const playbackView = document.getElementById('playbackView');
     const playbackSocial = document.getElementById('playbackSocial');
     const recommendedVideos = document.getElementById('recommendedVideos');
+    const playbackQueue = document.getElementById('playbackQueue');
+    const touchPlaybackControls = document.getElementById('touchPlaybackControls');
+    const autoplayToggle = document.getElementById('autoplayToggle');
+    let autoplayEnabled = false;
+    let touchControlsTimer;
     let currentPlayback = null;
     const playbackEditVideo = document.getElementById('playbackEditVideo');
     const editVideoModal = document.getElementById('editVideoModal');
@@ -897,6 +925,8 @@
     function openMainPlayer(source, video) {
       currentPlayback = video;
       updatePlaybackEditButton();
+      renderPlaybackQueue();
+      updatePlaybackNavigation();
       releaseVideoResources(mainPlayerVideo);
       mainPlayerVideo.src = source;
       if (video.thumbnailPreviewUrl || video.thumbnailUrl) mainPlayerVideo.poster = video.thumbnailPreviewUrl || video.thumbnailUrl;
@@ -948,11 +978,17 @@
       }
       playbackView.scrollIntoView({ behavior: 'smooth', block: 'start' });
       mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.'));
+      showTouchPlaybackControls();
     }
     function closeMainPlayer() {
+      clearTimeout(touchControlsTimer);
+      touchPlaybackControls.classList.add('invisible', 'opacity-0');
+      touchPlaybackControls.classList.remove('opacity-100');
+      touchPlaybackControls.setAttribute('aria-hidden', 'true');
       releaseVideoResources(mainPlayerVideo);
       mainPlayerVideo.removeAttribute('poster');
       currentPlayback = null;
+      playbackQueue.replaceChildren();
       updatePlaybackEditButton();
       playbackView.classList.add('hidden');
       document.getElementById('videosPanel').classList.remove('playback-active');
@@ -960,6 +996,121 @@
       document.getElementById('comunidad').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     document.getElementById('backToVideos').addEventListener('click', closeMainPlayer);
+
+    function getPlaybackQueueCards() {
+      const cards = [...videoGrid.querySelectorAll('.community-card')]
+        .filter(card => !card.classList.contains('hidden'));
+      const currentIndex = cards.findIndex(card => card.dataset.cardKey === currentPlayback?.cardId);
+      return currentIndex < 0 ? [] : cards.slice(currentIndex + 1);
+    }
+
+    function renderPlaybackQueue() {
+      playbackQueue.replaceChildren();
+      const upcoming = getPlaybackQueueCards().slice(0, 8);
+      if (!upcoming.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-xs text-zinc-500';
+        empty.textContent = 'No hay más videos en la lista actual.';
+        playbackQueue.append(empty);
+        return;
+      }
+      upcoming.forEach(card => {
+        const launch = card.querySelector('.video-launch');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.queueCard = card.dataset.cardKey;
+        button.className = 'w-36 shrink-0 text-left';
+        const thumbnail = document.createElement('span');
+        thumbnail.className = 'relative block aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-sky-950 to-emerald-900';
+        thumbnail.style.backgroundImage = launch?.style.backgroundImage || '';
+        const thumbnailUrl = launch?.dataset.thumbnailUrl || '';
+        if (thumbnailUrl) {
+          const image = document.createElement('img');
+          image.src = thumbnailUrl;
+          image.loading = 'lazy';
+          image.alt = '';
+          image.className = 'absolute inset-0 h-full w-full object-cover';
+          image.referrerPolicy = 'no-referrer';
+          thumbnail.append(image);
+        }
+        const title = document.createElement('span');
+        title.className = 'mt-2 block truncate text-xs font-semibold text-white';
+        title.textContent = card.dataset.videoTitle || 'Video';
+        const channel = document.createElement('span');
+        channel.className = 'block truncate text-[11px] text-zinc-500';
+        channel.textContent = card.dataset.channelName || 'Canal de la comunidad';
+        button.append(thumbnail, title, channel);
+        playbackQueue.append(button);
+      });
+    }
+
+    function updatePlaybackNavigation() {
+      const cards = [...videoGrid.querySelectorAll('.community-card')]
+        .filter(card => !card.classList.contains('hidden'));
+      const currentIndex = cards.findIndex(card => card.dataset.cardKey === currentPlayback?.cardId);
+      document.getElementById('previousVideoButton').disabled = currentIndex <= 0;
+      document.getElementById('nextVideoButton').disabled = currentIndex < 0 || currentIndex >= cards.length - 1;
+    }
+
+    async function playAdjacentVideo(direction) {
+      const cards = [...videoGrid.querySelectorAll('.community-card')]
+        .filter(card => !card.classList.contains('hidden'));
+      const currentIndex = cards.findIndex(card => card.dataset.cardKey === currentPlayback?.cardId);
+      const target = cards[currentIndex + direction];
+      if (target) await playCommunityCard(target);
+    }
+
+    function hideTouchPlaybackControls() {
+      clearTimeout(touchControlsTimer);
+      touchPlaybackControls.classList.add('invisible', 'opacity-0');
+      touchPlaybackControls.classList.remove('opacity-100');
+      touchPlaybackControls.setAttribute('aria-hidden', 'true');
+    }
+
+    function showTouchPlaybackControls() {
+      clearTimeout(touchControlsTimer);
+      touchPlaybackControls.classList.remove('invisible', 'opacity-0');
+      touchPlaybackControls.classList.add('opacity-100');
+      touchPlaybackControls.setAttribute('aria-hidden', 'false');
+      touchControlsTimer = setTimeout(hideTouchPlaybackControls, 3000);
+    }
+
+    function toggleTouchPlaybackControls() {
+      if (touchPlaybackControls.classList.contains('invisible')) showTouchPlaybackControls();
+      else hideTouchPlaybackControls();
+    }
+
+    document.getElementById('mainPlayerVideo').addEventListener('click', toggleTouchPlaybackControls);
+    document.getElementById('mainPlayerVideo').addEventListener('pointermove', showTouchPlaybackControls);
+    touchPlaybackControls.addEventListener('click', event => event.stopPropagation());
+    document.getElementById('previousVideoButton').addEventListener('click', () => {
+      playAdjacentVideo(-1).catch(error => showToast(error.message || 'No se pudo reproducir el video anterior.'));
+    });
+    document.getElementById('nextVideoButton').addEventListener('click', () => {
+      playAdjacentVideo(1).catch(error => showToast(error.message || 'No se pudo reproducir el siguiente video.'));
+    });
+    document.getElementById('touchPlayPauseButton').addEventListener('click', () => {
+      if (mainPlayerVideo.paused) {
+        mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video.'));
+      } else {
+        mainPlayerVideo.pause();
+      }
+      showTouchPlaybackControls();
+    });
+    playbackQueue.addEventListener('click', event => {
+      const button = event.target.closest('button[data-queue-card]');
+      const card = videoGrid.querySelector(`[data-card-key="${CSS.escape(button?.dataset.queueCard || '')}"]`);
+      if (card) {
+        playCommunityCard(card).catch(error => showToast(error.message || 'No se pudo reproducir el siguiente video.'));
+      }
+    });
+    autoplayToggle.addEventListener('click', () => {
+      autoplayEnabled = !autoplayEnabled;
+      autoplayToggle.setAttribute('aria-checked', String(autoplayEnabled));
+      document.getElementById('autoplayIndicator').classList.toggle('bg-mint', autoplayEnabled);
+      document.getElementById('autoplayIndicator').classList.toggle('bg-zinc-500', !autoplayEnabled);
+      document.getElementById('autoplayLabel').textContent = `Autoplay: ${autoplayEnabled ? 'Activado' : 'Desactivado'}`;
+    });
     async function playCommunityCard(card) {
       const button = card.querySelector('.video-launch');
       if (!button) return;
@@ -1025,6 +1176,16 @@
     });
     mainPlayerVideo.addEventListener('error', () => showToast('No se pudo cargar este video. Comprueba tu conexión e inténtalo de nuevo.'));
     mainPlayerVideo.addEventListener('play', () => document.getElementById('radioAudio').pause());
+    mainPlayerVideo.addEventListener('play', () => {
+      document.getElementById('touchPlayPauseButton').setAttribute('aria-label', 'Pausar video');
+    });
+    mainPlayerVideo.addEventListener('pause', () => {
+      document.getElementById('touchPlayPauseButton').setAttribute('aria-label', 'Reproducir video');
+    });
+    mainPlayerVideo.addEventListener('ended', () => {
+      if (!autoplayEnabled) return;
+      playAdjacentVideo(1).catch(error => showToast(error.message || 'No se pudo reproducir el siguiente video.'));
+    });
 
     const authModal = document.getElementById('authModal');
     const authForm = document.getElementById('authForm');
