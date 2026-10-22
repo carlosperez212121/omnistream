@@ -83,7 +83,7 @@
         <button id="viewOwnChannel" type="button" class="mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-sm text-white transition hover:bg-white/5"><i data-lucide="circle-user-round" class="h-4 w-4"></i>Ver mi canal</button>
         <button id="signOutButton" type="button" class="mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-sm text-white transition hover:bg-white/5"><i data-lucide="log-out" class="h-4 w-4"></i>Cerrar sesión</button>
       </div>
-      <button aria-label="Abrir menú" class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-zinc-300 md:hidden" onclick="const mobileNav = document.getElementById('mobileNav'); if (mobileNav) mobileNav.classList.toggle('hidden')">
+      <button aria-label="Abrir menú" class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-zinc-300 md:hidden" onclick="document.getElementById('mobileNav').classList.toggle('hidden')">
         <i data-lucide="menu" class="h-5 w-5"></i>
       </button>
     </div>
@@ -144,7 +144,7 @@
           </div>
           <div class="hidden justify-self-end lg:block">
             <div class="w-56 rotate-2 overflow-hidden rounded-2xl border border-white/20 shadow-2xl shadow-black/60">
-              <img class="h-80 w-full object-cover" src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=600&q=85" alt="Olas rompiendo en una costa al atardecer" loading="lazy">
+              <img class="h-80 w-full object-cover" src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=600&q=85" alt="Olas rompiendo en una costa al atardecer">
               <div class="bg-[#171719] p-4"><p class="text-xs font-bold uppercase tracking-widest text-gold">Una producción original</p><p class="mt-1 text-sm font-semibold text-white">Donde termina la marea</p></div>
             </div>
           </div>
@@ -192,50 +192,16 @@
       </button>
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div class="min-w-0">
-          <div id="mainPlayerStage" class="group relative overflow-hidden rounded-2xl bg-black">
-            <video id="mainPlayerVideo" class="block aspect-video w-full bg-black object-contain" controls playsinline preload="metadata">
-              Tu navegador no admite la reproducción de video.
-            </video>
-          </div>
-          <section class="mt-4 rounded-2xl border border-line bg-panel/80 p-4" aria-labelledby="playbackQueueTitle">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 id="playbackQueueTitle" class="text-sm font-semibold text-white">Siguientes videos a reproducir</h2>
-              <div class="flex flex-wrap items-center gap-2">
-                <button id="previousVideoButton" type="button" class="rounded-full border border-line px-3 py-2 text-xs font-semibold text-zinc-300 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Video anterior">Anterior</button>
-                <button id="nextVideoButton" type="button" class="rounded-full border border-line px-3 py-2 text-xs font-semibold text-zinc-300 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Siguiente video">Siguiente</button>
-                <button id="autoplayToggle" type="button" role="switch" aria-checked="false" class="inline-flex items-center gap-2 rounded-full border border-line px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-ember/50 hover:text-white">
-                  <span id="autoplayIndicator" class="h-2 w-2 rounded-full bg-zinc-500"></span>
-                  <span id="autoplayLabel">Autoplay: Desactivado</span>
-                </button>
-              </div>
-            </div>
-            <div id="playbackQueue" class="mt-4 flex gap-3 overflow-x-auto pb-1" aria-live="polite">
-              <button type="button" data-queue-card class="hidden w-36 shrink-0 text-left" aria-label="Reproducir video siguiente">
-                <img data-slot-thumbnail class="aspect-video w-full rounded-lg bg-gradient-to-br from-sky-950 to-emerald-900 object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
-                <span data-slot-title class="mt-2 block truncate text-xs font-semibold text-white"></span>
-              </button>
-              <button type="button" data-queue-card class="hidden w-36 shrink-0 text-left" aria-label="Reproducir video siguiente">
-                <img data-slot-thumbnail class="aspect-video w-full rounded-lg bg-gradient-to-br from-sky-950 to-emerald-900 object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
-                <span data-slot-title class="mt-2 block truncate text-xs font-semibold text-white"></span>
-              </button>
-              <button type="button" data-queue-card class="hidden w-36 shrink-0 text-left" aria-label="Reproducir video siguiente">
-                <img data-slot-thumbnail class="aspect-video w-full rounded-lg bg-gradient-to-br from-sky-950 to-emerald-900 object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
-                <span data-slot-title class="mt-2 block truncate text-xs font-semibold text-white"></span>
-              </button>
-              <button type="button" data-queue-card class="hidden w-36 shrink-0 text-left" aria-label="Reproducir video siguiente">
-                <img data-slot-thumbnail class="aspect-video w-full rounded-lg bg-gradient-to-br from-sky-950 to-emerald-900 object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
-                <span data-slot-title class="mt-2 block truncate text-xs font-semibold text-white"></span>
-              </button>
-            </div>
-            <p id="playbackQueueEmpty" class="mt-4 hidden text-xs text-zinc-500">No hay más videos en la lista actual.</p>
-          </section>
+          <video id="mainPlayerVideo" class="block aspect-video w-full rounded-2xl bg-black object-contain" controls playsinline preload="metadata">
+            Tu navegador no admite la reproducción de video.
+          </video>
           <div class="mt-5 flex flex-wrap items-start justify-between gap-3">
             <h1 id="playbackTitle" class="text-xl font-bold leading-7 text-white sm:text-2xl">Video</h1>
           </div>
           <p class="mt-2 text-sm text-zinc-400"><span id="playbackViews">0 vistas</span><span aria-hidden="true"> · </span><time id="playbackDate"></time></p>
           <div class="mt-5 flex flex-wrap items-center justify-between gap-4 border-y border-line py-4">
             <button id="playbackChannel" type="button" class="flex min-w-0 items-center gap-3 text-left transition hover:opacity-80" aria-label="Ver perfil del canal">
-              <img id="playbackAvatar" class="hidden h-11 w-11 rounded-full object-cover" alt="" loading="lazy">
+              <img id="playbackAvatar" class="hidden h-11 w-11 rounded-full object-cover" alt="">
               <span id="playbackInitials" class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ember/20 text-sm font-bold text-ember">C</span>
               <span class="min-w-0">
                 <span id="playbackChannelName" class="block truncate text-sm font-semibold text-white">Canal</span>
@@ -257,33 +223,7 @@
         </div>
         <aside aria-labelledby="recommendedTitle">
           <h2 id="recommendedTitle" class="mb-4 text-lg font-semibold text-white">Videos sugeridos</h2>
-          <div id="recommendedVideos" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <article data-recommended-slot class="hidden flex gap-3">
-              <button type="button" data-recommended-card class="poster relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-sky-950 to-emerald-900" aria-label="Reproducir video sugerido">
-                <img data-slot-thumbnail class="absolute inset-0 h-full w-full object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
-              </button>
-              <div class="min-w-0 py-1"><h3 data-slot-title class="line-clamp-2 text-sm font-semibold leading-5 text-white"></h3></div>
-            </article>
-            <article data-recommended-slot class="hidden flex gap-3">
-              <button type="button" data-recommended-card class="poster relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-sky-950 to-emerald-900" aria-label="Reproducir video sugerido">
-                <img data-slot-thumbnail class="absolute inset-0 h-full w-full object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
-              </button>
-              <div class="min-w-0 py-1"><h3 data-slot-title class="line-clamp-2 text-sm font-semibold leading-5 text-white"></h3></div>
-            </article>
-            <article data-recommended-slot class="hidden flex gap-3">
-              <button type="button" data-recommended-card class="poster relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-sky-950 to-emerald-900" aria-label="Reproducir video sugerido">
-                <img data-slot-thumbnail class="absolute inset-0 h-full w-full object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
-              </button>
-              <div class="min-w-0 py-1"><h3 data-slot-title class="line-clamp-2 text-sm font-semibold leading-5 text-white"></h3></div>
-            </article>
-            <article data-recommended-slot class="hidden flex gap-3">
-              <button type="button" data-recommended-card class="poster relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-sky-950 to-emerald-900" aria-label="Reproducir video sugerido">
-                <img data-slot-thumbnail class="absolute inset-0 h-full w-full object-cover" alt="" loading="lazy" decoding="async" fetchpriority="low">
-              </button>
-              <div class="min-w-0 py-1"><h3 data-slot-title class="line-clamp-2 text-sm font-semibold leading-5 text-white"></h3></div>
-            </article>
-          </div>
-          <p id="recommendedVideosEmpty" class="hidden rounded-xl border border-line p-4 text-sm text-zinc-400">No hay más videos para recomendar por ahora.</p>
+          <div id="recommendedVideos" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1"></div>
         </aside>
       </div>
     </section>
@@ -311,7 +251,7 @@
           <input id="videoThumbnailUrl" type="url" maxlength="2048" class="mt-2 w-full rounded-xl border border-line bg-ink px-3.5 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-ember/60" placeholder="https://ejemplo.com/portada.jpg">
         </label>
         <div class="max-w-sm overflow-hidden rounded-xl border border-line bg-ink">
-          <img id="videoThumbnailPreview" class="hidden aspect-video w-full object-cover" alt="Vista previa de la portada del video" loading="lazy">
+          <img id="videoThumbnailPreview" class="hidden aspect-video w-full object-cover" alt="Vista previa de la portada del video">
           <video id="videoThumbnailFallback" class="hidden aspect-video w-full object-cover" muted playsinline preload="metadata" aria-label="Primer fotograma del video"></video>
         </div>
         <label class="block text-xs font-medium text-zinc-300">Visibilidad
@@ -502,7 +442,7 @@
     <section class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-panel p-6 shadow-2xl sm:p-8">
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-center gap-4">
-          <img id="channelProfileAvatar" class="hidden h-16 w-16 rounded-full object-cover" alt="" loading="lazy">
+          <img id="channelProfileAvatar" class="hidden h-16 w-16 rounded-full object-cover" alt="">
           <span id="channelProfileInitials" class="grid h-16 w-16 place-items-center rounded-full bg-ember/20 text-xl font-bold text-ember">C</span>
           <div>
             <p class="text-[10px] font-bold uppercase tracking-widest text-mint">Perfil del canal</p>
@@ -610,13 +550,6 @@
   <div id="toast" role="status" aria-live="polite" class="pointer-events-none fixed bottom-24 left-1/2 z-50 -translate-x-1/2 translate-y-2 rounded-full border border-line bg-panel px-5 py-3 text-sm font-medium text-white opacity-0 shadow-xl transition-all"></div>
 
   <script>
-    try {
-    function getRequiredElement(id) {
-      const element = document.getElementById(id);
-      if (!element) throw new Error(`No se encontró el elemento requerido "#${id}" durante la inicialización.`);
-      return element;
-    }
-
     lucide.createIcons();
 
     // Set the public anon key on window before this script in the hosting page.
@@ -644,7 +577,7 @@
     let uploadedVideoTitle = '';
     let authMode = 'signin';
     const searchInputs = [document.getElementById('searchInput'), document.getElementById('mobileSearch')].filter(Boolean);
-    const videoGrid = getRequiredElement('videoGrid');
+    const videoGrid = document.getElementById('videoGrid');
     const subscribedChannels = new Set();
     const subscriberCounts = new Map();
     const busyChannels = new Set();
@@ -652,22 +585,11 @@
     const channelVideosCache = new Map();
     let subscriptionRefreshVersion = 0;
     let channelProfileLoadVersion = 0;
-    const emptyResults = getRequiredElement('emptyResults');
+    const emptyResults = document.getElementById('emptyResults');
     let activeFilter = 'all';
     let toastTimer;
 
-    function releaseVideoResources(video) {
-      if (!(video instanceof HTMLVideoElement)) return;
-      video.pause();
-      video.removeAttribute('src');
-      video.querySelectorAll('source').forEach(source => source.removeAttribute('src'));
-      video.load();
-    }
-
     function activateTab(tabName) {
-      if (tabName !== 'videos') {
-        document.querySelectorAll('#clipper video').forEach(releaseVideoResources);
-      }
       document.querySelectorAll('[data-tab-panel]').forEach(panel => {
         const active = panel.dataset.tabPanel === tabName;
         panel.classList.toggle('hidden', !active);
@@ -686,7 +608,7 @@
         if (control instanceof HTMLAnchorElement) event.preventDefault();
         if (currentPlayback) closeMainPlayer();
         activateTab(control.dataset.tabTarget);
-        getRequiredElement('mobileNav').classList.add('hidden');
+        document.getElementById('mobileNav').classList.add('hidden');
       });
     });
 
@@ -701,10 +623,6 @@
         if (matchesQuery && matchesFilter) visible++;
       });
       emptyResults.classList.toggle('hidden', visible > 0);
-      if (currentPlayback) {
-        renderPlaybackQueue();
-        updatePlaybackNavigation();
-      }
     }
 
     searchInputs.forEach(input => input.addEventListener('input', event => {
@@ -726,30 +644,22 @@
       filterVideos(searchInputs[0]?.value || '');
     }));
 
-    const mainPlayerVideo = getRequiredElement('mainPlayerVideo');
-    window.addEventListener('pagehide', event => {
-      if (!event.persisted) releaseVideoResources(mainPlayerVideo);
-    });
-    const channelProfileModal = getRequiredElement('channelProfileModal');
-    const channelProfileSubscribe = getRequiredElement('channelProfileSubscribe');
+    const mainPlayerVideo = document.getElementById('mainPlayerVideo');
+    const channelProfileModal = document.getElementById('channelProfileModal');
+    const channelProfileSubscribe = document.getElementById('channelProfileSubscribe');
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    const playbackView = getRequiredElement('playbackView');
-    const playbackSocial = getRequiredElement('playbackSocial');
-    const recommendedVideos = getRequiredElement('recommendedVideos');
-    const playbackQueue = getRequiredElement('playbackQueue');
-    const recommendedVideosEmpty = getRequiredElement('recommendedVideosEmpty');
-    const playbackQueueEmpty = getRequiredElement('playbackQueueEmpty');
-    const autoplayToggle = getRequiredElement('autoplayToggle');
-    let autoplayEnabled = false;
+    const playbackView = document.getElementById('playbackView');
+    const playbackSocial = document.getElementById('playbackSocial');
+    const recommendedVideos = document.getElementById('recommendedVideos');
     let currentPlayback = null;
-    const playbackEditVideo = getRequiredElement('playbackEditVideo');
-    const editVideoModal = getRequiredElement('editVideoModal');
-    const editVideoForm = getRequiredElement('editVideoForm');
-    const editVideoTitleInput = getRequiredElement('editVideoTitleInput');
-    const editVideoDescriptionInput = getRequiredElement('editVideoDescriptionInput');
-    const editVideoThumbnailUrlInput = getRequiredElement('editVideoThumbnailUrlInput');
-    const editVideoMessage = getRequiredElement('editVideoMessage');
-    const saveEditVideo = getRequiredElement('saveEditVideo');
+    const playbackEditVideo = document.getElementById('playbackEditVideo');
+    const editVideoModal = document.getElementById('editVideoModal');
+    const editVideoForm = document.getElementById('editVideoForm');
+    const editVideoTitleInput = document.getElementById('editVideoTitleInput');
+    const editVideoDescriptionInput = document.getElementById('editVideoDescriptionInput');
+    const editVideoThumbnailUrlInput = document.getElementById('editVideoThumbnailUrlInput');
+    const editVideoMessage = document.getElementById('editVideoMessage');
+    const saveEditVideo = document.getElementById('saveEditVideo');
     let editingVideo = null;
 
     function isValidThumbnailUrl(value) {
@@ -794,7 +704,6 @@
     function addVideoPreview(container, imageUrl, videoUrl, className = '') {
       if (imageUrl) {
         const image = document.createElement('img');
-        image.loading = 'lazy';
         image.src = imageUrl;
         image.alt = '';
         image.className = className;
@@ -913,18 +822,18 @@
         currentPlayback.thumbnailPreviewUrl = thumbnailUrl || currentPlayback.generatedThumbnailUrl || '';
         if (currentPlayback.thumbnailPreviewUrl) mainPlayerVideo.poster = currentPlayback.thumbnailPreviewUrl;
         else mainPlayerVideo.removeAttribute('poster');
-        getRequiredElement('playbackTitle').textContent = title || 'Video';
-        getRequiredElement('playbackDescription').textContent = description || 'Este video no tiene descripción.';
+        document.getElementById('playbackTitle').textContent = title || 'Video';
+        document.getElementById('playbackDescription').textContent = description || 'Este video no tiene descripción.';
       }
       filterVideos(searchInputs[0]?.value || '');
       renderRecommendedVideos(currentPlayback?.id || currentPlayback?.cardId);
     }
 
-    getRequiredElement('playbackEditVideo').addEventListener('click', () => {
+    document.getElementById('playbackEditVideo').addEventListener('click', () => {
       openEditVideoModal(currentPlayback);
     });
-    getRequiredElement('closeEditVideoModal').addEventListener('click', closeEditVideoModal);
-    getRequiredElement('cancelEditVideo').addEventListener('click', closeEditVideoModal);
+    document.getElementById('closeEditVideoModal').addEventListener('click', closeEditVideoModal);
+    document.getElementById('cancelEditVideo').addEventListener('click', closeEditVideoModal);
     editVideoModal.addEventListener('click', event => {
       if (event.target === editVideoModal) closeEditVideoModal();
     });
@@ -951,8 +860,8 @@
         return;
       }
       saveEditVideo.disabled = true;
-      getRequiredElement('closeEditVideoModal').disabled = true;
-      getRequiredElement('cancelEditVideo').disabled = true;
+      document.getElementById('closeEditVideoModal').disabled = true;
+      document.getElementById('cancelEditVideo').disabled = true;
       try {
         const { data, error } = await supabaseClient.from('videos')
           .update({ title, description, thumbnail_url: thumbnailUrl || null })
@@ -968,30 +877,27 @@
         editVideoMessage.classList.remove('hidden');
       } finally {
         saveEditVideo.disabled = false;
-        getRequiredElement('closeEditVideoModal').disabled = false;
-        getRequiredElement('cancelEditVideo').disabled = false;
+        document.getElementById('closeEditVideoModal').disabled = false;
+        document.getElementById('cancelEditVideo').disabled = false;
       }
     });
 
     function openMainPlayer(source, video) {
       currentPlayback = video;
       updatePlaybackEditButton();
-      renderPlaybackQueue();
-      updatePlaybackNavigation();
-      releaseVideoResources(mainPlayerVideo);
       mainPlayerVideo.src = source;
       if (video.thumbnailPreviewUrl || video.thumbnailUrl) mainPlayerVideo.poster = video.thumbnailPreviewUrl || video.thumbnailUrl;
       else mainPlayerVideo.removeAttribute('poster');
-      getRequiredElement('playbackTitle').textContent = video.title || 'Video';
-      getRequiredElement('playbackDescription').textContent = video.description || 'Este video no tiene descripción.';
-      getRequiredElement('playbackDate').textContent = video.createdAt
+      document.getElementById('playbackTitle').textContent = video.title || 'Video';
+      document.getElementById('playbackDescription').textContent = video.description || 'Este video no tiene descripción.';
+      document.getElementById('playbackDate').textContent = video.createdAt
         ? new Intl.DateTimeFormat('es', { dateStyle: 'medium' }).format(new Date(video.createdAt))
         : 'Video de la comunidad';
-      getRequiredElement('playbackViews').textContent = `${Number(video.views || 0).toLocaleString('es')} vistas`;
-      getRequiredElement('playbackChannelName').textContent = video.channelName || 'Canal de la comunidad';
+      document.getElementById('playbackViews').textContent = `${Number(video.views || 0).toLocaleString('es')} vistas`;
+      document.getElementById('playbackChannelName').textContent = video.channelName || 'Canal de la comunidad';
       const channelInitials = (video.channelName || 'Canal').trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0] || '').join('').toUpperCase();
-      const playbackInitials = getRequiredElement('playbackInitials');
-      const playbackAvatar = getRequiredElement('playbackAvatar');
+      const playbackInitials = document.getElementById('playbackInitials');
+      const playbackAvatar = document.getElementById('playbackAvatar');
       playbackInitials.textContent = channelInitials || 'C';
       playbackInitials.classList.toggle('hidden', Boolean(video.avatarUrl));
       playbackAvatar.classList.toggle('hidden', !video.avatarUrl);
@@ -1001,14 +907,14 @@
       } else {
         playbackAvatar.removeAttribute('src');
       }
-      const subscribeButton = getRequiredElement('playbackSubscribe');
+      const subscribeButton = document.getElementById('playbackSubscribe');
       subscribeButton.dataset.subscribeChannel = video.userId || '';
       subscribeButton.classList.toggle('hidden', !video.userId);
       if (video.userId) {
         updateChannelControls(video.userId);
-        getRequiredElement('playbackSubscribers').textContent = String(subscriberCounts.get(video.userId) || 0);
+        document.getElementById('playbackSubscribers').textContent = String(subscriberCounts.get(video.userId) || 0);
       }
-      getRequiredElement('videosPanel').classList.add('playback-active');
+      document.getElementById('videosPanel').classList.add('playback-active');
       playbackView.classList.remove('hidden');
       renderRecommendedVideos(video.id || video.cardId);
       renderPersistentSocial(video);
@@ -1019,7 +925,7 @@
             const views = Number(data);
             if (currentPlayback?.id === video.id && Number.isFinite(views)) {
               currentPlayback.views = views;
-              getRequiredElement('playbackViews').textContent = `${views.toLocaleString('es')} vistas`;
+              document.getElementById('playbackViews').textContent = `${views.toLocaleString('es')} vistas`;
             }
           })
           .catch(error => {
@@ -1031,99 +937,18 @@
       mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.'));
     }
     function closeMainPlayer() {
-      releaseVideoResources(mainPlayerVideo);
+      mainPlayerVideo.pause();
+      mainPlayerVideo.removeAttribute('src');
       mainPlayerVideo.removeAttribute('poster');
+      mainPlayerVideo.load();
       currentPlayback = null;
-      renderPlaybackQueue();
-      renderRecommendedVideos(null);
       updatePlaybackEditButton();
       playbackView.classList.add('hidden');
-      getRequiredElement('videosPanel').classList.remove('playback-active');
+      document.getElementById('videosPanel').classList.remove('playback-active');
       playbackSocial.replaceChildren();
-      getRequiredElement('comunidad').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('comunidad').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    getRequiredElement('backToVideos').addEventListener('click', closeMainPlayer);
-
-    function getPlaybackQueueCards() {
-      const cards = [...videoGrid.querySelectorAll('.community-card')]
-        .filter(card => !card.classList.contains('hidden'));
-      const currentIndex = cards.findIndex(card => card.dataset.cardKey === currentPlayback?.cardId);
-      return currentIndex < 0 ? [] : cards.slice(currentIndex + 1);
-    }
-
-    function renderPlaybackQueue() {
-      const upcoming = getPlaybackQueueCards().slice(0, 4);
-      renderVideoSlots(playbackQueue, upcoming, 'button[data-queue-card]', 'queueCard');
-      playbackQueueEmpty.classList.toggle('hidden', upcoming.length > 0);
-    }
-
-    function renderVideoSlots(container, cards, slotSelector, datasetKey) {
-      const slots = container.querySelectorAll(slotSelector);
-      slots.forEach((slot, index) => {
-        const button = slot.matches('button') ? slot : slot.querySelector('button');
-        const thumbnail = slot.querySelector('[data-slot-thumbnail]');
-        const title = slot.querySelector('[data-slot-title]');
-        const card = cards[index];
-        slot.classList.toggle('hidden', !card);
-        if (!card) {
-          if (button) button.dataset[datasetKey] = '';
-          if (thumbnail?.hasAttribute('src')) thumbnail.removeAttribute('src');
-          if (thumbnail) thumbnail.style.backgroundImage = '';
-          if (title) title.textContent = '';
-          return;
-        }
-        const launch = card.querySelector('.video-launch');
-        const titleText = card.dataset.videoTitle || card.querySelector('h3')?.textContent.trim() || 'Video';
-        const thumbnailUrl = launch?.dataset.thumbnailUrl || launch?.dataset.generatedThumbnailUrl || '';
-        if (button) {
-          button.dataset[datasetKey] = card.dataset.cardKey;
-          button.setAttribute('aria-label', `Reproducir ${titleText}`);
-        }
-        if (thumbnail && thumbnail.getAttribute('src') !== thumbnailUrl) {
-          if (thumbnailUrl) thumbnail.setAttribute('src', thumbnailUrl);
-          else thumbnail.removeAttribute('src');
-        }
-        if (thumbnail) thumbnail.style.backgroundImage = thumbnailUrl ? '' : launch?.style.backgroundImage || '';
-        if (title) title.textContent = titleText;
-      });
-    }
-
-    function updatePlaybackNavigation() {
-      const cards = [...videoGrid.querySelectorAll('.community-card')]
-        .filter(card => !card.classList.contains('hidden'));
-      const currentIndex = cards.findIndex(card => card.dataset.cardKey === currentPlayback?.cardId);
-      getRequiredElement('previousVideoButton').disabled = currentIndex <= 0;
-      getRequiredElement('nextVideoButton').disabled = currentIndex < 0 || currentIndex >= cards.length - 1;
-    }
-
-    async function playAdjacentVideo(direction) {
-      const cards = [...videoGrid.querySelectorAll('.community-card')]
-        .filter(card => !card.classList.contains('hidden'));
-      const currentIndex = cards.findIndex(card => card.dataset.cardKey === currentPlayback?.cardId);
-      const target = cards[currentIndex + direction];
-      if (target) await playCommunityCard(target);
-    }
-
-    getRequiredElement('previousVideoButton').addEventListener('click', () => {
-      playAdjacentVideo(-1).catch(error => showToast(error.message || 'No se pudo reproducir el video anterior.'));
-    });
-    getRequiredElement('nextVideoButton').addEventListener('click', () => {
-      playAdjacentVideo(1).catch(error => showToast(error.message || 'No se pudo reproducir el siguiente video.'));
-    });
-    playbackQueue.addEventListener('click', event => {
-      const button = event.target.closest('button[data-queue-card]');
-      const card = videoGrid.querySelector(`[data-card-key="${CSS.escape(button?.dataset.queueCard || '')}"]`);
-      if (card) {
-        playCommunityCard(card).catch(error => showToast(error.message || 'No se pudo reproducir el siguiente video.'));
-      }
-    });
-    autoplayToggle.addEventListener('click', () => {
-      autoplayEnabled = !autoplayEnabled;
-      autoplayToggle.setAttribute('aria-checked', String(autoplayEnabled));
-      getRequiredElement('autoplayIndicator').classList.toggle('bg-mint', autoplayEnabled);
-      getRequiredElement('autoplayIndicator').classList.toggle('bg-zinc-500', !autoplayEnabled);
-      getRequiredElement('autoplayLabel').textContent = `Autoplay: ${autoplayEnabled ? 'Activado' : 'Desactivado'}`;
-    });
+    document.getElementById('backToVideos').addEventListener('click', closeMainPlayer);
     async function playCommunityCard(card) {
       const button = card.querySelector('.video-launch');
       if (!button) return;
@@ -1184,34 +1009,30 @@
       const card = videoGrid.querySelector(`[data-card-key="${CSS.escape(button?.dataset.recommendedCard || '')}"]`);
       if (card) await playCommunityCard(card);
     });
-    getRequiredElement('playbackChannel').addEventListener('click', () => {
+    document.getElementById('playbackChannel').addEventListener('click', () => {
       if (currentPlayback?.userId) openChannelProfile(currentPlayback.userId);
     });
     mainPlayerVideo.addEventListener('error', () => showToast('No se pudo cargar este video. Comprueba tu conexión e inténtalo de nuevo.'));
-    mainPlayerVideo.addEventListener('play', () => getRequiredElement('radioAudio').pause());
-    mainPlayerVideo.addEventListener('ended', () => {
-      if (!autoplayEnabled) return;
-      playAdjacentVideo(1).catch(error => showToast(error.message || 'No se pudo reproducir el siguiente video.'));
-    });
+    mainPlayerVideo.addEventListener('play', () => document.getElementById('radioAudio').pause());
 
-    const authModal = getRequiredElement('authModal');
-    const authForm = getRequiredElement('authForm');
-    const authMessage = getRequiredElement('authMessage');
-    const authSubmit = getRequiredElement('authSubmit');
-    const googleSignIn = getRequiredElement('googleSignIn');
-    const googleSignInLabel = getRequiredElement('googleSignInLabel');
-    const googleDemoForm = getRequiredElement('googleDemoForm');
-    const googleDemoSubmit = getRequiredElement('googleDemoSubmit');
-    const authModeToggle = getRequiredElement('authModeToggle');
-    const authPassword = getRequiredElement('authPassword');
-    const authConfirmPassword = getRequiredElement('authConfirmPassword');
+    const authModal = document.getElementById('authModal');
+    const authForm = document.getElementById('authForm');
+    const authMessage = document.getElementById('authMessage');
+    const authSubmit = document.getElementById('authSubmit');
+    const googleSignIn = document.getElementById('googleSignIn');
+    const googleSignInLabel = document.getElementById('googleSignInLabel');
+    const googleDemoForm = document.getElementById('googleDemoForm');
+    const googleDemoSubmit = document.getElementById('googleDemoSubmit');
+    const authModeToggle = document.getElementById('authModeToggle');
+    const authPassword = document.getElementById('authPassword');
+    const authConfirmPassword = document.getElementById('authConfirmPassword');
     let authPending = false;
     function openAuthModal(mode = 'signin') {
       setAuthMode(mode);
       setGoogleDemoMode(false);
       authModal.classList.remove('hidden');
       authModal.classList.add('flex');
-      getRequiredElement('authEmail').focus();
+      document.getElementById('authEmail').focus();
     }
     function closeAuthModal() {
       authModal.classList.add('hidden');
@@ -1223,29 +1044,29 @@
       authForm.classList.toggle('hidden', enabled);
       googleSignIn.classList.toggle('hidden', enabled);
       googleDemoForm.classList.toggle('hidden', !enabled);
-      getRequiredElement('authModeToggle').parentElement.classList.toggle('hidden', enabled);
-      getRequiredElement('authTitle').textContent = enabled
+      document.getElementById('authModeToggle').parentElement.classList.toggle('hidden', enabled);
+      document.getElementById('authTitle').textContent = enabled
         ? 'Continuar con Google'
         : authMode === 'signup' ? 'Crear cuenta' : 'Iniciar sesión';
-      getRequiredElement('authDescription').textContent = enabled
+      document.getElementById('authDescription').textContent = enabled
         ? 'No hay un proveedor de Google conectado. Puedes entrar con un correo de prueba.'
         : 'Accede a tu cuenta para publicar videos y guardar tus clips.';
       authMessage.classList.add('hidden');
-      if (enabled) getRequiredElement('googleDemoEmail').focus();
+      if (enabled) document.getElementById('googleDemoEmail').focus();
     }
     function setAuthMode(mode) {
       authMode = mode;
       const signingUp = mode === 'signup';
-      getRequiredElement('authTitle').textContent = signingUp ? 'Crear cuenta' : 'Iniciar sesión';
+      document.getElementById('authTitle').textContent = signingUp ? 'Crear cuenta' : 'Iniciar sesión';
       authSubmit.textContent = signingUp ? 'Registrarse' : 'Iniciar sesión';
-      getRequiredElement('authNameField').classList.toggle('hidden', !signingUp);
-      getRequiredElement('authName').required = signingUp;
-      getRequiredElement('authName').autocomplete = signingUp ? 'name' : 'off';
+      document.getElementById('authNameField').classList.toggle('hidden', !signingUp);
+      document.getElementById('authName').required = signingUp;
+      document.getElementById('authName').autocomplete = signingUp ? 'name' : 'off';
       authPassword.autocomplete = signingUp ? 'new-password' : 'current-password';
-      getRequiredElement('authConfirmPasswordField').classList.toggle('hidden', !signingUp);
+      document.getElementById('authConfirmPasswordField').classList.toggle('hidden', !signingUp);
       authConfirmPassword.required = signingUp;
       authConfirmPassword.value = '';
-      getRequiredElement('authSwitchText').textContent = signingUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
+      document.getElementById('authSwitchText').textContent = signingUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
       authModeToggle.textContent = signingUp ? 'Inicia sesión' : 'Regístrate';
       authMessage.classList.add('hidden');
     }
@@ -1274,13 +1095,13 @@
         uploadedVideoPath = null;
         uploadedVideoId = null;
         uploadedVideoTitle = '';
-        const video = getRequiredElement('clipVideo');
+        const video = document.getElementById('clipVideo');
         video.pause();
         video.removeAttribute('src');
         video.load();
       }
-      const button = getRequiredElement('authButton');
-      const label = getRequiredElement('authButtonLabel');
+      const button = document.getElementById('authButton');
+      const label = document.getElementById('authButtonLabel');
       const existingImage = button.querySelector('img');
       if (existingImage) existingImage.remove();
       const existingInitials = button.querySelector('.profile-initials');
@@ -1291,8 +1112,8 @@
       label.classList.toggle('hidden', !user);
       label.classList.toggle('sm:inline', Boolean(user));
       button.setAttribute('aria-label', user ? 'Abrir menú de usuario' : 'Iniciar sesión o registrarse');
-      getRequiredElement('profileEmail').textContent = user?.email || '';
-      getRequiredElement('viewOwnChannel').classList.toggle('hidden', !user);
+      document.getElementById('profileEmail').textContent = user?.email || '';
+      document.getElementById('viewOwnChannel').classList.toggle('hidden', !user);
       if (user) {
         if (supabaseClient && uuidPattern.test(user.id)) {
           syncChannelProfile(user)
@@ -1306,7 +1127,6 @@
         const avatarUrl = user.user_metadata?.avatar_url;
         if (avatarUrl) {
           const avatar = document.createElement('img');
-          avatar.loading = 'lazy';
           avatar.src = avatarUrl;
           avatar.alt = '';
           avatar.referrerPolicy = 'no-referrer';
@@ -1447,7 +1267,7 @@
         if (element.dataset.subscriberCount === channelId) element.textContent = count;
       });
       if (currentPlayback?.userId === channelId) {
-        getRequiredElement('playbackSubscribers').textContent = count;
+        document.getElementById('playbackSubscribers').textContent = count;
       }
     }
 
@@ -1509,20 +1329,10 @@
       });
       document.querySelectorAll('[data-channel-panel]').forEach(panel => {
         const active = panel.dataset.channelPanel === tabName;
-        panel.querySelectorAll('video').forEach(video => {
-          if (active) {
-            if (!video.getAttribute('src') && video.dataset.videoSrc) {
-              video.src = video.dataset.videoSrc;
-              video.load();
-            }
-          } else {
-            releaseVideoResources(video);
-          }
-        });
         panel.classList.toggle('hidden', !active);
         panel.setAttribute('aria-hidden', String(!active));
       });
-      const emptyMessage = getRequiredElement('channelProfileEmpty');
+      const emptyMessage = document.getElementById('channelProfileEmpty');
       const activePanel = document.querySelector(`[data-channel-panel="${tabName}"]`);
       const hasContent = Boolean(activePanel?.children.length);
       emptyMessage.textContent = tabName === 'videos'
@@ -1587,11 +1397,11 @@
 
     async function loadChannelProfile(channelId) {
       const loadVersion = ++channelProfileLoadVersion;
-      const videosPanel = getRequiredElement('channelVideosPanel');
-      const clipsPanel = getRequiredElement('channelClipsPanel');
+      const videosPanel = document.getElementById('channelVideosPanel');
+      const clipsPanel = document.getElementById('channelClipsPanel');
       videosPanel.replaceChildren();
       clipsPanel.replaceChildren();
-      const emptyMessage = getRequiredElement('channelProfileEmpty');
+      const emptyMessage = document.getElementById('channelProfileEmpty');
       emptyMessage.textContent = 'Cargando el contenido del canal…';
       emptyMessage.classList.remove('hidden');
       const localUser = currentUser?.id === channelId ? currentUser : null;
@@ -1609,12 +1419,12 @@
       const renderProfileSummary = () => {
         const channelName = profile?.display_name || `Canal · ${channelId.slice(0, 8)}`;
         const avatarUrl = profile?.avatar_url || null;
-        const avatar = getRequiredElement('channelProfileAvatar');
-        const initials = getRequiredElement('channelProfileInitials');
-        getRequiredElement('channelProfileTitle').textContent = channelName;
-        getRequiredElement('channelProfileDescription').textContent = profile?.description || 'Este canal todavía no ha añadido una descripción.';
-        getRequiredElement('channelProfileVideoCount').textContent = String(videos.length);
-        getRequiredElement('channelProfileClipCount').textContent = String(clips.length);
+        const avatar = document.getElementById('channelProfileAvatar');
+        const initials = document.getElementById('channelProfileInitials');
+        document.getElementById('channelProfileTitle').textContent = channelName;
+        document.getElementById('channelProfileDescription').textContent = profile?.description || 'Este canal todavía no ha añadido una descripción.';
+        document.getElementById('channelProfileVideoCount').textContent = String(videos.length);
+        document.getElementById('channelProfileClipCount').textContent = String(clips.length);
         const initialLetters = channelName.trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0] || '').join('').toUpperCase() || 'C';
         initials.textContent = initialLetters;
         initials.classList.toggle('hidden', Boolean(avatarUrl));
@@ -1772,7 +1582,6 @@
             video.controls = true;
             video.playsInline = true;
             video.preload = 'metadata';
-            video.dataset.videoSrc = data.signedUrl;
             video.setAttribute('aria-label', clip.title || 'Clip del canal');
             video.src = data.signedUrl;
             const title = document.createElement('p');
@@ -1806,7 +1615,7 @@
         showToast('Este canal no tiene un identificador válido.');
         return;
       }
-      getRequiredElement('channelProfileTitle').textContent = `Canal · ${channelId.slice(0, 8)}`;
+      document.getElementById('channelProfileTitle').textContent = `Canal · ${channelId.slice(0, 8)}`;
       channelProfileSubscribe.dataset.subscribeChannel = channelId;
       channelProfileModal.querySelector('[data-subscriber-count]').dataset.subscriberCount = channelId;
       setChannelProfileTab('videos');
@@ -1820,7 +1629,6 @@
     }
 
     function closeChannelProfile() {
-      channelProfileModal.querySelectorAll('video').forEach(releaseVideoResources);
       channelProfileModal.classList.add('hidden');
       channelProfileModal.classList.remove('flex');
     }
@@ -1953,7 +1761,6 @@
         profileButton.className = 'inline-flex min-w-0 items-center gap-2 text-xs text-zinc-400 transition hover:text-white';
         if (profile?.avatar_url) {
           const profileAvatar = document.createElement('img');
-          profileAvatar.loading = 'lazy';
           profileAvatar.src = profile.avatar_url;
           profileAvatar.alt = '';
           profileAvatar.referrerPolicy = 'no-referrer';
@@ -2004,7 +1811,6 @@
             const currentAvatar = profileButton.querySelector('img, span');
             if (profile?.avatar_url) {
               const avatar = document.createElement('img');
-              avatar.loading = 'lazy';
               avatar.src = profile.avatar_url;
               avatar.alt = '';
               avatar.referrerPolicy = 'no-referrer';
@@ -2111,8 +1917,8 @@
             if (!data?.length) throw new Error('No se encontró el video o no tienes permiso para borrarlo.');
             videoCard.remove();
             videoGrid.querySelector(`[data-database-video-id="${CSS.escape(videoId)}"]`)?.remove();
-            getRequiredElement('channelProfileVideoCount').textContent =
-              String(getRequiredElement('channelVideosPanel').children.length);
+            document.getElementById('channelProfileVideoCount').textContent =
+              String(document.getElementById('channelVideosPanel').children.length);
             setChannelProfileTab('videos');
             const videoPath = actionButton.dataset.videoPath;
             if (videoPath) {
@@ -2189,7 +1995,7 @@
             views: Number(videoButton.dataset.profileVideoViews) || 0,
             videoPath: videoButton.dataset.profileVideoPath,
             visibility: videoButton.dataset.profileVideoVisibility,
-            channelName: channel.display_name || getRequiredElement('channelProfileTitle').textContent,
+            channelName: channel.display_name || document.getElementById('channelProfileTitle').textContent,
             avatarUrl: channel.avatar_url || null,
             thumbnailUrl: videoButton.dataset.profileCustomThumbnailUrl || '',
             thumbnailPreviewUrl: videoButton.dataset.profileThumbnailUrl || '',
@@ -2201,7 +2007,7 @@
         }
       }
     });
-    getRequiredElement('closeChannelProfile').addEventListener('click', closeChannelProfile);
+    document.getElementById('closeChannelProfile').addEventListener('click', closeChannelProfile);
     channelProfileModal.addEventListener('click', event => {
       if (event.target === channelProfileModal) closeChannelProfile();
     });
@@ -2209,18 +2015,18 @@
       if (event.key === 'Escape' && !channelProfileModal.classList.contains('hidden')) closeChannelProfile();
     });
 
-    getRequiredElement('authButton').addEventListener('click', () => {
+    document.getElementById('authButton').addEventListener('click', () => {
       if (!currentUser) {
         openAuthModal();
       } else {
-        getRequiredElement('profileMenu').classList.toggle('hidden');
+        document.getElementById('profileMenu').classList.toggle('hidden');
       }
     });
-    getRequiredElement('viewOwnChannel').addEventListener('click', () => {
-      getRequiredElement('profileMenu').classList.add('hidden');
+    document.getElementById('viewOwnChannel').addEventListener('click', () => {
+      document.getElementById('profileMenu').classList.add('hidden');
       if (currentUser) openChannelProfile(currentUser.id);
     });
-    getRequiredElement('closeAuthModal').addEventListener('click', closeAuthModal);
+    document.getElementById('closeAuthModal').addEventListener('click', closeAuthModal);
     authModal.addEventListener('click', event => {
       if (event.target === authModal) closeAuthModal();
     });
@@ -2233,7 +2039,7 @@
         setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
       }
     });
-    getRequiredElement('googleDemoCancel').addEventListener('click', () => setGoogleDemoMode(false));
+    document.getElementById('googleDemoCancel').addEventListener('click', () => setGoogleDemoMode(false));
     googleSignIn.addEventListener('click', async () => {
       if (authPending) return;
       if (!supabaseClient) {
@@ -2262,7 +2068,7 @@
     googleDemoForm.addEventListener('submit', event => {
       event.preventDefault();
       if (authPending || !googleDemoForm.reportValidity()) return;
-      const email = getRequiredElement('googleDemoEmail').value.trim().toLowerCase();
+      const email = document.getElementById('googleDemoEmail').value.trim().toLowerCase();
       if (!email) return;
       setAuthPending(true, 'google');
       try {
@@ -2284,7 +2090,7 @@
       if (authPending) return;
       authMessage.classList.add('hidden');
       const mode = authMode;
-      const email = getRequiredElement('authEmail').value.trim();
+      const email = document.getElementById('authEmail').value.trim();
       const password = authPassword.value;
       if (mode === 'signup' && password !== authConfirmPassword.value) {
         window.alert('Las contraseñas no coinciden.');
@@ -2296,7 +2102,7 @@
         if (!supabaseClient) {
           if (mode === 'signup') {
             const user = await registerLocalUser(
-              getRequiredElement('authName').value.trim(),
+              document.getElementById('authName').value.trim(),
               email.toLowerCase(),
               password
             );
@@ -2313,7 +2119,7 @@
           ? await supabaseClient.auth.signUp({
             email,
             password,
-            options: { data: { full_name: getRequiredElement('authName').value.trim() } }
+            options: { data: { full_name: document.getElementById('authName').value.trim() } }
           })
           : await supabaseClient.auth.signInWithPassword({ email, password });
         if (result.error) throw result.error;
@@ -2333,8 +2139,8 @@
         setAuthPending(false);
       }
     });
-    getRequiredElement('signOutButton').addEventListener('click', async () => {
-      getRequiredElement('profileMenu').classList.add('hidden');
+    document.getElementById('signOutButton').addEventListener('click', async () => {
+      document.getElementById('profileMenu').classList.add('hidden');
       if (['local', 'google-demo'].includes(currentUser?.app_metadata?.provider)) {
         try {
           window.localStorage.removeItem(localSessionStorageKey);
@@ -2380,20 +2186,20 @@
       }
     }
 
-    const uploadVideoInput = getRequiredElement('uploadVideoInput');
-    const videoUploadForm = getRequiredElement('videoUploadForm');
-    const videoTitle = getRequiredElement('videoTitle');
-    const videoDescription = getRequiredElement('videoDescription');
-    const videoThumbnailUrl = getRequiredElement('videoThumbnailUrl');
-    const videoThumbnailPreview = getRequiredElement('videoThumbnailPreview');
-    const videoThumbnailFallback = getRequiredElement('videoThumbnailFallback');
-    const videoVisibility = getRequiredElement('videoVisibility');
-    const submitVideoUpload = getRequiredElement('submitVideoUpload');
-    const cancelVideoUpload = getRequiredElement('cancelVideoUpload');
-    const uploadVideoButton = getRequiredElement('uploadVideoButton');
-    const videoUploadProgressContainer = getRequiredElement('videoUploadProgressContainer');
-    const videoUploadProgress = getRequiredElement('videoUploadProgress');
-    const videoUploadProgressPercent = getRequiredElement('videoUploadProgressPercent');
+    const uploadVideoInput = document.getElementById('uploadVideoInput');
+    const videoUploadForm = document.getElementById('videoUploadForm');
+    const videoTitle = document.getElementById('videoTitle');
+    const videoDescription = document.getElementById('videoDescription');
+    const videoThumbnailUrl = document.getElementById('videoThumbnailUrl');
+    const videoThumbnailPreview = document.getElementById('videoThumbnailPreview');
+    const videoThumbnailFallback = document.getElementById('videoThumbnailFallback');
+    const videoVisibility = document.getElementById('videoVisibility');
+    const submitVideoUpload = document.getElementById('submitVideoUpload');
+    const cancelVideoUpload = document.getElementById('cancelVideoUpload');
+    const uploadVideoButton = document.getElementById('uploadVideoButton');
+    const videoUploadProgressContainer = document.getElementById('videoUploadProgressContainer');
+    const videoUploadProgress = document.getElementById('videoUploadProgress');
+    const videoUploadProgressPercent = document.getElementById('videoUploadProgressPercent');
     let selectedVideoFile = null;
     let generatedThumbnailBlob = null;
     let thumbnailPreviewUrl = '';
@@ -2542,7 +2348,7 @@
       clearThumbnailPreview();
       selectedVideoFile = file;
       selectedVideoPreviewUrl = URL.createObjectURL(file);
-      getRequiredElement('selectedVideoName').textContent = file.name;
+      document.getElementById('selectedVideoName').textContent = file.name;
       videoTitle.value = file.name.replace(/\.[^.]+$/, '');
       videoDescription.value = '';
       videoThumbnailUrl.value = '';
@@ -2562,7 +2368,7 @@
       selectedVideoFile = null;
       clearThumbnailPreview();
       videoUploadForm.reset();
-      getRequiredElement('selectedVideoName').textContent = '';
+      document.getElementById('selectedVideoName').textContent = '';
       resetVideoUploadProgress();
       videoUploadForm.classList.add('hidden');
     });
@@ -2648,16 +2454,16 @@
         clipVideo.load();
         clipPreviewVideo.src = data.signedUrl;
         clipPreviewVideo.load();
-        getRequiredElement('clipSourceTitle').textContent = title;
+        document.getElementById('clipSourceTitle').textContent = title;
         selectedVideoFile = null;
         clearThumbnailPreview();
         videoUploadForm.reset();
-        getRequiredElement('selectedVideoName').textContent = '';
+        document.getElementById('selectedVideoName').textContent = '';
         resetVideoUploadProgress();
         videoUploadForm.classList.add('hidden');
         showToast('¡Video publicado con éxito!');
-        getRequiredElement('clipOfferModal').classList.remove('hidden');
-        getRequiredElement('clipOfferModal').classList.add('flex');
+        document.getElementById('clipOfferModal').classList.remove('hidden');
+        document.getElementById('clipOfferModal').classList.add('flex');
       } catch (error) {
         let message = error.message || 'No se pudo subir el video.';
         if (uploaded && !saved) {
@@ -2685,12 +2491,12 @@
       }
     });
 
-    const clipOfferModal = getRequiredElement('clipOfferModal');
+    const clipOfferModal = document.getElementById('clipOfferModal');
     function closeClipOffer() {
       clipOfferModal.classList.add('hidden');
       clipOfferModal.classList.remove('flex');
     }
-    getRequiredElement('acceptClipOffer').addEventListener('click', async () => {
+    document.getElementById('acceptClipOffer').addEventListener('click', async () => {
       if (!uploadedVideoPath) {
         showToast('No se encontró la ruta del video publicado. Vuelve a publicar el video e inténtalo de nuevo.');
         return;
@@ -2713,23 +2519,21 @@
       clipPreviewVideo.src = signedUrl;
       clipPreviewVideo.load();
       closeClipOffer();
-      getRequiredElement('clipper').classList.remove('hidden');
-      getRequiredElement('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('clipper').classList.remove('hidden');
+      document.getElementById('clipper').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
-    getRequiredElement('skipClipper').addEventListener('click', () => {
-      document.querySelectorAll('#clipper video').forEach(releaseVideoResources);
-      getRequiredElement('clipper').classList.add('hidden');
+    document.getElementById('skipClipper').addEventListener('click', () => {
+      document.getElementById('clipper').classList.add('hidden');
       if (currentUser && uuidPattern.test(currentUser.id)) {
         openChannelProfile(currentUser.id);
       } else {
         activateTab('videos');
-        getRequiredElement('videosPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('videosPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
-    getRequiredElement('skipClipOffer').addEventListener('click', async () => {
+    document.getElementById('skipClipOffer').addEventListener('click', async () => {
       closeClipOffer();
-      document.querySelectorAll('#clipper video').forEach(releaseVideoResources);
-      getRequiredElement('clipper').classList.add('hidden');
+      document.getElementById('clipper').classList.add('hidden');
       try {
         await loadPublishedVideos();
       } catch (error) {
@@ -2739,16 +2543,16 @@
         openChannelProfile(currentUser.id);
       } else {
         activateTab('videos');
-        getRequiredElement('videosPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('videosPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
     clipOfferModal.addEventListener('click', event => {
-      if (event.target === clipOfferModal) getRequiredElement('skipClipOffer').click();
+      if (event.target === clipOfferModal) document.getElementById('skipClipOffer').click();
     });
 
-    const clipVideo = getRequiredElement('clipVideo');
-    const clipPreviewVideo = getRequiredElement('clipPreviewVideo');
-    const clipRange = getRequiredElement('clipRange');
+    const clipVideo = document.getElementById('clipVideo');
+    const clipPreviewVideo = document.getElementById('clipPreviewVideo');
+    const clipRange = document.getElementById('clipRange');
     const clipLength = 20;
     clipPreviewVideo.src = clipVideo.querySelector('source')?.src || '';
     function updateClipPreview() {
@@ -2777,13 +2581,13 @@
       clipRange.max = String(duration);
       clipRange.value = String(clipStart);
       clipRange.disabled = isShortVideo;
-      getRequiredElement('clipDuration').textContent = isShortVideo
+      document.getElementById('clipDuration').textContent = isShortVideo
         ? `Video completo · ${Math.ceil(duration)} s`
         : `${Math.ceil(selectedLength)} segundos`;
-      getRequiredElement('clipTime').textContent = `${formatTime(clipVideo.currentTime || 0)} / ${formatTime(duration)}`;
-      getRequiredElement('clipStart').textContent = formatTime(clipStart);
-      getRequiredElement('clipEnd').textContent = formatTime(clipEnd);
-      getRequiredElement('clipTotal').textContent = formatTime(duration);
+      document.getElementById('clipTime').textContent = `${formatTime(clipVideo.currentTime || 0)} / ${formatTime(duration)}`;
+      document.getElementById('clipStart').textContent = formatTime(clipStart);
+      document.getElementById('clipEnd').textContent = formatTime(clipEnd);
+      document.getElementById('clipTotal').textContent = formatTime(duration);
     }
     clipVideo.addEventListener('loadedmetadata', updateClip);
     clipVideo.addEventListener('durationchange', updateClip);
@@ -2795,7 +2599,7 @@
       updateClip();
     });
 
-    const seekZones = getRequiredElement('seekZones');
+    const seekZones = document.getElementById('seekZones');
     let lastSeekTap = null;
     let seekFeedbackTimer;
     seekZones.addEventListener('pointerup', event => {
@@ -2813,8 +2617,8 @@
       const duration = Number.isFinite(clipVideo.duration) ? clipVideo.duration : Infinity;
       clipVideo.currentTime = Math.max(0, Math.min(clipVideo.currentTime + (side === 'left' ? -10 : 10), duration));
 
-      const feedback = getRequiredElement(side === 'left' ? 'rewindFeedback' : 'forwardFeedback');
-      const otherFeedback = getRequiredElement(side === 'left' ? 'forwardFeedback' : 'rewindFeedback');
+      const feedback = document.getElementById(side === 'left' ? 'rewindFeedback' : 'forwardFeedback');
+      const otherFeedback = document.getElementById(side === 'left' ? 'forwardFeedback' : 'rewindFeedback');
       otherFeedback.classList.add('hidden');
       feedback.classList.add('hidden');
       feedback.classList.remove('seek-feedback-active');
@@ -2828,7 +2632,7 @@
       }, 700);
     });
 
-    const playerToggle = getRequiredElement('playerToggle');
+    const playerToggle = document.getElementById('playerToggle');
     function updatePlayerToggle() {
       const playing = !clipVideo.paused && !clipVideo.ended;
       playerToggle.classList.toggle('hidden', playing);
@@ -2847,10 +2651,10 @@
       }
     });
     updateClip();
-    getRequiredElement('clipCaption').addEventListener('input', event => {
-      getRequiredElement('captionPreview').textContent = event.target.value || 'Tu momento, tu historia';
+    document.getElementById('clipCaption').addEventListener('input', event => {
+      document.getElementById('captionPreview').textContent = event.target.value || 'Tu momento, tu historia';
     });
-    getRequiredElement('shareClip').addEventListener('click', async () => {
+    document.getElementById('shareClip').addEventListener('click', async () => {
       if (!requireUser() || !ensureSupabase()) return;
       const duration = clipVideo.duration;
       if (!Number.isFinite(duration) || duration <= 0) {
@@ -2869,7 +2673,7 @@
         showToast('No hay un video cargado para recortar.');
         return;
       }
-      const button = getRequiredElement('shareClip');
+      const button = document.getElementById('shareClip');
       button.disabled = true;
       button.classList.add('cursor-wait', 'opacity-60');
       try {
@@ -2901,7 +2705,7 @@
         const { error: insertError } = await supabaseClient.from('media_clips').insert({
           user_id: currentUser.id,
           video_id: uploadedVideoId,
-          title: getRequiredElement('clipCaption').value.trim() || 'Clip sin título',
+          title: document.getElementById('clipCaption').value.trim() || 'Clip sin título',
           start_time: Math.floor(startTime),
           end_time: Math.min(Math.floor(startTime) + clipLength, Math.ceil(endTime)),
           aspect_ratio: '9:16',
@@ -2926,10 +2730,10 @@
       }
     });
 
-    const radioAudio = getRequiredElement('radioAudio');
-    const radioToggle = getRequiredElement('radioToggle');
-    const radioStatus = getRequiredElement('radioStatus');
-    const radioLiveBadge = getRequiredElement('radioLiveBadge');
+    const radioAudio = document.getElementById('radioAudio');
+    const radioToggle = document.getElementById('radioToggle');
+    const radioStatus = document.getElementById('radioStatus');
+    const radioLiveBadge = document.getElementById('radioLiveBadge');
     function updateRadioControls() {
       const playing = !radioAudio.paused && !radioAudio.ended;
       radioStatus.textContent = playing ? 'Muestra' : 'En pausa';
@@ -2944,8 +2748,8 @@
       radioLiveBadge.querySelector('span:last-child').textContent = playing ? 'Muestra en reproducción' : 'En pausa';
       radioLiveBadge.querySelector('span:first-child').classList.toggle('bg-mint', playing);
       radioLiveBadge.querySelector('span:first-child').classList.toggle('bg-zinc-600', !playing);
-      getRequiredElement('radioFooterIndicator').classList.toggle('bg-mint', playing);
-      getRequiredElement('radioFooterIndicator').classList.toggle('bg-zinc-600', !playing);
+      document.getElementById('radioFooterIndicator').classList.toggle('bg-mint', playing);
+      document.getElementById('radioFooterIndicator').classList.toggle('bg-zinc-600', !playing);
       radioToggle.setAttribute('aria-label', playing ? 'Pausar audio' : 'Reproducir audio');
       radioToggle.innerHTML = `<i data-lucide="${playing ? 'pause' : 'play'}" class="h-4 w-4 fill-current"></i>`;
       lucide.createIcons();
@@ -2969,13 +2773,13 @@
     updateRadioControls();
 
     let localTransmissionStream = null;
-    const transmitPreview = getRequiredElement('transmitPreview');
-    const transmitMonitor = getRequiredElement('transmitMonitor');
-    const transmitStatus = getRequiredElement('transmitStatus');
-    const transmitStatusBadge = getRequiredElement('transmitStatusBadge');
-    const transmitMessage = getRequiredElement('transmitMessage');
-    const startTransmission = getRequiredElement('startTransmission');
-    const stopTransmission = getRequiredElement('stopTransmission');
+    const transmitPreview = document.getElementById('transmitPreview');
+    const transmitMonitor = document.getElementById('transmitMonitor');
+    const transmitStatus = document.getElementById('transmitStatus');
+    const transmitStatusBadge = document.getElementById('transmitStatusBadge');
+    const transmitMessage = document.getElementById('transmitMessage');
+    const startTransmission = document.getElementById('startTransmission');
+    const stopTransmission = document.getElementById('stopTransmission');
     function stopLocalTransmission(message = 'La prueba local se detuvo. No se envió audio a otros oyentes.') {
       const stream = localTransmissionStream;
       localTransmissionStream = null;
@@ -3050,13 +2854,12 @@
     });
 
     function showToast(message) {
-      const toast = getRequiredElement('toast');
+      const toast = document.getElementById('toast');
       toast.textContent = message;
       toast.classList.remove('opacity-0', 'translate-y-2');
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.add('opacity-0', 'translate-y-2'), 2600);
     }
-    window.showToast = showToast;
 
     const hiddenVideosStorageKey = 'omnistream.hiddenVideos';
     const savedDemoVideosStorageKey = 'omnistream.savedDemoVideos';
@@ -3115,11 +2918,49 @@
     }
 
     function renderRecommendedVideos(currentKey) {
-      const suggestions = currentKey ? [...videoGrid.querySelectorAll('.community-card')]
+      recommendedVideos.replaceChildren();
+      const suggestions = [...videoGrid.querySelectorAll('.community-card')]
         .filter(card => !card.classList.contains('hidden') && card.dataset.cardKey !== String(currentKey))
-        .slice(0, 4) : [];
-      renderVideoSlots(recommendedVideos, suggestions, '[data-recommended-slot]', 'recommendedCard');
-      recommendedVideosEmpty.classList.toggle('hidden', suggestions.length > 0);
+        .slice(0, 8);
+      if (!suggestions.length) {
+        const empty = document.createElement('p');
+        empty.className = 'rounded-xl border border-line p-4 text-sm text-zinc-400';
+        empty.textContent = 'No hay más videos para recomendar por ahora.';
+        recommendedVideos.append(empty);
+        return;
+      }
+      suggestions.forEach(card => {
+        const item = document.createElement('article');
+        item.className = 'flex gap-3';
+        const launch = card.querySelector('.video-launch');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.recommendedCard = card.dataset.cardKey;
+        button.className = 'poster relative aspect-video w-36 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-sky-950 to-emerald-900';
+        button.style.backgroundImage = launch?.style.backgroundImage || '';
+        addVideoPreview(
+          button,
+          launch?.dataset.thumbnailUrl || '',
+          launch?.dataset.previewVideoUrl || launch?.querySelector('video')?.src || '',
+          'absolute inset-0 h-full w-full object-cover'
+        );
+        button.setAttribute('aria-label', `Reproducir ${card.dataset.videoTitle}`);
+        const title = document.createElement('span');
+        title.className = 'sr-only';
+        title.textContent = card.dataset.videoTitle;
+        button.append(title);
+        const details = document.createElement('div');
+        details.className = 'min-w-0 py-1';
+        const heading = document.createElement('h3');
+        heading.className = 'line-clamp-2 text-sm font-semibold leading-5 text-white';
+        heading.textContent = card.dataset.videoTitle;
+        const channel = document.createElement('p');
+        channel.className = 'mt-1 truncate text-xs text-zinc-500';
+        channel.textContent = card.dataset.channelName || card.querySelector('p')?.textContent.split('·')[0].trim() || 'Canal de la comunidad';
+        details.append(heading, channel);
+        item.append(button, details);
+        recommendedVideos.append(item);
+      });
     }
 
     async function toggleVideoBookmark(videoId, demoKey = null) {
@@ -3176,7 +3017,7 @@
       }
     }
 
-    async function refreshPersistentSocial(video, renderVersion = persistentSocialVersion, includeComments = true) {
+    async function refreshPersistentSocial(video, renderVersion = persistentSocialVersion) {
       if (renderVersion !== persistentSocialVersion || currentPlayback?.id !== video.id) return;
       const panel = playbackSocial;
       const userId = currentUser && uuidPattern.test(currentUser.id) ? currentUser.id : null;
@@ -3186,10 +3027,8 @@
         userId
           ? supabaseClient.from('video_reactions').select('vote').eq('video_id', video.id).eq('user_id', userId).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
-        includeComments
-          ? supabaseClient.from('video_comments').select('id, user_id, content, created_at')
-            .eq('video_id', video.id).order('created_at', { ascending: true })
-          : Promise.resolve({ data: null, error: null }),
+        supabaseClient.from('video_comments').select('id, user_id, content, created_at')
+          .eq('video_id', video.id).order('created_at', { ascending: true }),
         userId
           ? supabaseClient.from('video_bookmarks').select('video_id').eq('video_id', video.id).eq('user_id', userId).maybeSingle()
           : Promise.resolve({ data: null, error: null })
@@ -3200,7 +3039,7 @@
       if (renderVersion !== persistentSocialVersion
           || currentPlayback?.id !== video.id
           || (currentUser?.id || null) !== userId) return;
-      const comments = includeComments && Array.isArray(commentsResult.data) ? commentsResult.data : [];
+      const comments = Array.isArray(commentsResult.data) ? commentsResult.data : [];
       const authorIds = [...new Set(comments.map(comment => comment.user_id).filter(Boolean))];
       let authorProfiles = [];
       if (authorIds.length) {
@@ -3228,48 +3067,38 @@
       bookmarkButton.dataset.saved = String(Boolean(bookmarkResult.data));
       bookmarkButton.querySelector('[data-social-label]').textContent = bookmarkResult.data ? 'Guardado' : 'Guardar';
 
-      if (includeComments) {
-        const list = panel.querySelector('[data-persistent-comments]');
-        const existingRows = new Map([...list.children]
-          .map(row => [row.dataset.persistentCommentId, row]));
-        const commentIds = new Set();
-        comments.forEach(comment => {
-          commentIds.add(comment.id);
-          if (existingRows.has(comment.id)) return;
-          const row = document.createElement('article');
-          row.dataset.persistentCommentId = comment.id;
-          row.className = 'border-b border-line py-4 last:border-0';
-          const header = document.createElement('div');
-          header.className = 'flex items-center justify-between gap-3';
-          const author = document.createElement('span');
-          author.className = 'text-xs font-semibold text-zinc-200';
-          author.textContent = authorNames.get(comment.user_id)
-            || (currentUser?.id === comment.user_id ? currentUser.user_metadata?.full_name || currentUser.email || 'Tú' : `Canal · ${comment.user_id.slice(0, 8)}`);
-          const date = document.createElement('time');
-          date.className = 'text-[11px] text-zinc-500';
-          date.dateTime = comment.created_at;
-          date.textContent = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(comment.created_at));
-          header.append(author, date);
-          if (currentUser?.id === comment.user_id || currentUser?.id === video.userId) {
-            const remove = document.createElement('button');
-            remove.type = 'button';
-            remove.dataset.deleteComment = comment.id;
-            remove.className = 'rounded-lg px-2 py-1 text-xs text-zinc-500 transition hover:text-rose-300';
-            remove.textContent = 'Eliminar';
-            remove.setAttribute('aria-label', 'Eliminar comentario');
-            header.append(remove);
-          }
-          const body = document.createElement('p');
-          body.className = 'mt-2 whitespace-pre-wrap break-words text-sm leading-5 text-zinc-300';
-          body.textContent = comment.content;
-          row.append(header, body);
-          list.append(row);
-        });
-        existingRows.forEach((row, id) => {
-          if (!commentIds.has(id)) row.remove();
-        });
-        panel.querySelector('[data-persistent-comment-count]').textContent = String(comments.length);
-      }
+      const list = panel.querySelector('[data-persistent-comments]');
+      list.replaceChildren();
+      comments.forEach(comment => {
+        const row = document.createElement('article');
+        row.className = 'border-b border-line py-4 last:border-0';
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between gap-3';
+        const author = document.createElement('span');
+        author.className = 'text-xs font-semibold text-zinc-200';
+        author.textContent = authorNames.get(comment.user_id)
+          || (currentUser?.id === comment.user_id ? currentUser.user_metadata?.full_name || currentUser.email || 'Tú' : `Canal · ${comment.user_id.slice(0, 8)}`);
+        const date = document.createElement('time');
+        date.className = 'text-[11px] text-zinc-500';
+        date.dateTime = comment.created_at;
+        date.textContent = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(comment.created_at));
+        header.append(author, date);
+        if (currentUser?.id === comment.user_id || currentUser?.id === video.userId) {
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.dataset.deleteComment = comment.id;
+          remove.className = 'rounded-lg px-2 py-1 text-xs text-zinc-500 transition hover:text-rose-300';
+          remove.textContent = 'Eliminar';
+          remove.setAttribute('aria-label', 'Eliminar comentario');
+          header.append(remove);
+        }
+        const body = document.createElement('p');
+        body.className = 'mt-2 whitespace-pre-wrap break-words text-sm leading-5 text-zinc-300';
+        body.textContent = comment.content;
+        row.append(header, body);
+        list.append(row);
+      });
+      panel.querySelector('[data-persistent-comment-count]').textContent = String(comments.length);
     }
 
     function renderPersistentSocial(video) {
@@ -3378,7 +3207,7 @@
               updated_at: new Date().toISOString()
             }, { onConflict: 'video_id,user_id' });
           if (result.error) throw result.error;
-          await refreshPersistentSocial(video, persistentSocialVersion, false);
+          await refreshPersistentSocial(video);
         } catch (error) {
           showToast(`No se pudo guardar tu voto: ${error.message || 'inténtalo de nuevo.'}`);
         } finally {
@@ -3549,46 +3378,51 @@
       container.append(form);
     }
 
-    function createCommentElement(comment, state, depth = 0) {
-      const row = document.createElement('article');
-      row.dataset.commentId = comment.id;
-      row.dataset.commentDepth = String(depth);
-      row.className = `mt-3 rounded-xl bg-panel/70 p-3${depth ? ' ml-3 border-l border-line sm:ml-5' : ''}`;
-      const header = document.createElement('div');
-      header.className = 'flex items-center justify-between gap-3';
-      const author = document.createElement('span');
-      author.className = 'text-xs font-semibold text-zinc-200';
-      author.textContent = 'Tú';
-      const body = document.createElement('p');
-      body.className = 'mt-2 break-words text-sm leading-5 text-zinc-300';
-      body.textContent = comment.text;
-      const actions = document.createElement('div');
-      actions.className = 'mt-2 flex items-center gap-4';
-      const like = document.createElement('button');
-      like.type = 'button';
-      like.dataset.socialAction = 'comment-like';
-      like.setAttribute('aria-pressed', String(comment.liked));
-      like.setAttribute('aria-label', comment.liked ? 'Quitar me gusta del comentario' : 'Me gusta este comentario');
-      like.className = `inline-flex items-center gap-1.5 text-xs transition hover:text-ember ${comment.liked ? 'text-ember' : 'text-zinc-500'}`;
-      like.innerHTML = `<i data-lucide="heart" class="h-3.5 w-3.5${comment.liked ? ' fill-current' : ''}"></i><span>${comment.likes}</span>`;
-      const reply = document.createElement('button');
-      reply.type = 'button';
-      reply.dataset.socialAction = 'reply';
-      reply.className = 'inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-white';
-      reply.innerHTML = '<i data-lucide="reply" class="h-3.5 w-3.5"></i>Responder';
-      actions.append(like, reply);
-      header.append(author);
-      row.append(header, body, actions);
-      if (state.replyingTo === comment.id) appendCommentForm(row, comment.id);
-      comment.replies.forEach(child => row.append(createCommentElement(child, state, depth + 1)));
-      return row;
-    }
-
     function renderComments(item, state) {
       const list = item.querySelector('[data-social-comments]');
       const count = item.querySelector('[data-social-comment-count]');
-      list.replaceChildren(...state.comments.map(comment => createCommentElement(comment, state)));
+      list.replaceChildren();
       count.textContent = String(countComments(state.comments));
+
+      function appendComment(comment, container, depth = 0) {
+        const row = document.createElement('article');
+        row.dataset.commentId = comment.id;
+        row.className = `mt-3 rounded-xl bg-panel/70 p-3${depth ? ' ml-3 border-l border-line sm:ml-5' : ''}`;
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between gap-3';
+        const author = document.createElement('span');
+        author.className = 'text-xs font-semibold text-zinc-200';
+        author.textContent = 'Tú';
+        const body = document.createElement('p');
+        body.className = 'mt-2 break-words text-sm leading-5 text-zinc-300';
+        body.textContent = comment.text;
+        const actions = document.createElement('div');
+        actions.className = 'mt-2 flex items-center gap-4';
+        const like = document.createElement('button');
+        like.type = 'button';
+        like.dataset.socialAction = 'comment-like';
+        like.setAttribute('aria-pressed', String(comment.liked));
+        like.setAttribute('aria-label', comment.liked ? 'Quitar me gusta del comentario' : 'Me gusta este comentario');
+        like.className = `inline-flex items-center gap-1.5 text-xs transition hover:text-ember ${comment.liked ? 'text-ember' : 'text-zinc-500'}`;
+        like.innerHTML = `<i data-lucide="heart" class="h-3.5 w-3.5${comment.liked ? ' fill-current' : ''}"></i><span>${comment.likes}</span>`;
+        const reply = document.createElement('button');
+        reply.type = 'button';
+        reply.dataset.socialAction = 'reply';
+        reply.className = 'inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-white';
+        reply.innerHTML = '<i data-lucide="reply" class="h-3.5 w-3.5"></i>Responder';
+        actions.append(like, reply);
+        header.append(author);
+        row.append(header, body, actions);
+        if (state.replyingTo === comment.id) appendCommentForm(row, comment.id);
+        comment.replies.forEach(child => appendComment(child, row, depth + 1));
+        container.append(row);
+      }
+
+      state.comments.forEach(comment => appendComment(comment, list));
+      if (state.replyingTo === null) {
+        const form = item.querySelector('[data-social-comment-form]');
+        if (form?.dataset.parentId) form.remove();
+      }
       lucide.createIcons();
     }
 
@@ -3673,18 +3507,14 @@
         }
         if (action === 'reply') {
           const commentId = commentRow.dataset.commentId;
-          panel.querySelector('[data-social-comment-form][data-parent-id]')?.remove();
           state.replyingTo = state.replyingTo === commentId ? null : commentId;
-          if (state.replyingTo) {
-            appendCommentForm(commentRow, commentId);
-            commentRow.querySelector(`[data-parent-id="${CSS.escape(commentId)}"] input`)?.focus();
-            lucide.createIcons();
-          }
+          renderComments(panel, state);
+          if (state.replyingTo) panel.querySelector(`[data-parent-id="${state.replyingTo}"] input`)?.focus();
           return;
         }
         if (action === 'cancel-reply') {
           state.replyingTo = null;
-          button.closest('form').remove();
+          renderComments(panel, state);
           return;
         }
         if (action === 'comment-like') {
@@ -3693,12 +3523,7 @@
           if (!comment) return;
           comment.liked = !comment.liked;
           comment.likes += comment.liked ? 1 : -1;
-          button.setAttribute('aria-pressed', String(comment.liked));
-          button.setAttribute('aria-label', comment.liked ? 'Quitar me gusta del comentario' : 'Me gusta este comentario');
-          button.classList.toggle('text-ember', comment.liked);
-          button.classList.toggle('text-zinc-500', !comment.liked);
-          button.querySelector('i').classList.toggle('fill-current', comment.liked);
-          button.querySelector('span').textContent = String(comment.likes);
+          renderComments(panel, state);
         }
       });
 
@@ -3712,26 +3537,15 @@
         if (!text) return;
         const comment = { id: `comment-${nextCommentId++}`, text, likes: 0, liked: false, replies: [] };
         const parentId = form.dataset.parentId;
-        const parentRow = parentId
-          ? panel.querySelector(`[data-comment-id="${CSS.escape(parentId)}"]`)
-          : null;
         if (parentId) {
           const parent = findComment(state.comments, parentId);
-          if (!parent || !parentRow) return;
+          if (!parent) return;
           parent.replies.push(comment);
         } else {
           state.comments.push(comment);
         }
-        const row = createCommentElement(comment, state, parentId ? Number(parentRow.dataset.commentDepth) + 1 : 0);
-        if (parentId) {
-          parentRow.querySelector('[data-social-comment-form]')?.remove();
-          parentRow.append(row);
-        } else {
-          panel.querySelector('[data-social-comments]').append(row);
-        }
         state.replyingTo = null;
-        panel.querySelector('[data-social-comment-count]').textContent = String(countComments(state.comments));
-        lucide.createIcons();
+        renderComments(panel, state);
       });
 
       renderComments(panel, state);
@@ -3752,18 +3566,10 @@
       createSocialPanel(article, id, index === 0 ? 'mx-6 mb-6 sm:mx-10 lg:mx-14' : 'mt-4');
     });
     const clipperSocialHost = document.createElement('div');
-    getRequiredElement('clipper').append(clipperSocialHost);
+    document.getElementById('clipper').append(clipperSocialHost);
     createSocialPanel(clipperSocialHost, 'clipper-player', 'mx-6 mb-6 sm:mx-9 lg:mx-11');
     if (supabaseClient) {
       loadPublishedVideos().catch(error => showToast(error.message || 'No se pudieron cargar los videos públicos.'));
-    }
-    } catch (error) {
-      console.error('Error al iniciar OmniStream:', error);
-      const errorMessage = document.createElement('div');
-      errorMessage.setAttribute('role', 'alert');
-      errorMessage.style.cssText = 'position:fixed;inset:1rem 1rem auto;z-index:9999;padding:1rem;border:1px solid #fb7185;border-radius:.75rem;background:#3f121b;color:#ffe4e6;font:14px/1.5 system-ui,sans-serif;box-shadow:0 10px 30px #0008';
-      errorMessage.textContent = `No se pudo iniciar OmniStream: ${error instanceof Error ? error.message : String(error)}`;
-      document.body?.prepend(errorMessage);
     }
   </script>
 </body>
