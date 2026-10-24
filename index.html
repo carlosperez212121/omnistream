@@ -2161,7 +2161,12 @@
       supabaseClient.auth.onAuthStateChange((event, session) => {
         receivedAuthState = true;
         const previousUserId = currentUser?.id;
-        renderProfile(session?.user || null);
+        const user = session?.user || null;
+        if (event === 'TOKEN_REFRESHED' && user?.id === previousUserId) {
+          currentUser = user;
+          return;
+        }
+        renderProfile(user);
         if (previousUserId !== currentUser?.id) {
           refreshVideoCardMenus();
           if (currentPlayback?.id) renderPersistentSocial(currentPlayback);
