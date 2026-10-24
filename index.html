@@ -38,6 +38,7 @@
     .social-panel button { cursor: pointer; }
     .video-card-menu[open] > summary { color: white; }
     #videosPanel.playback-active > :not(#playbackView) { display: none; }
+    #miniPlayer:not(.hidden) { display: flex; }
     @keyframes seek-feedback {
       0% { opacity: 0; transform: translateY(10px) scale(.85); }
       20%, 75% { opacity: 1; transform: translateY(0) scale(1); }
@@ -193,9 +194,22 @@
       </button>
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div class="min-w-0">
-          <video id="mainPlayerVideo" class="block aspect-video w-full rounded-2xl bg-black object-contain" controls playsinline preload="metadata">
-            Tu navegador no admite la reproducción de video.
-          </video>
+          <div id="playbackVideoContainer" class="overflow-hidden rounded-2xl bg-black">
+            <video id="mainPlayerVideo" class="block aspect-video w-full bg-black object-contain" controls playsinline preload="metadata">
+              Tu navegador no admite la reproducción de video.
+            </video>
+          </div>
+          <div class="mt-3 flex items-center justify-between gap-3" role="group" aria-label="Controles de reproducción">
+            <button type="button" data-player-action="previous" class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Video anterior">
+              <i data-lucide="skip-back" class="h-4 w-4"></i><span>Anterior</span>
+            </button>
+            <button type="button" data-player-action="toggle" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-bold text-ink transition hover:bg-zinc-200" aria-label="Reproducir video">
+              <i data-player-icon data-lucide="play" class="h-4 w-4"></i><span data-player-label>Reproducir</span>
+            </button>
+            <button type="button" data-player-action="next" class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Siguiente video">
+              <span>Siguiente</span><i data-lucide="skip-forward" class="h-4 w-4"></i>
+            </button>
+          </div>
           <div class="mt-5 flex flex-wrap items-start justify-between gap-3">
             <h1 id="playbackTitle" class="text-xl font-bold leading-7 text-white sm:text-2xl">Video</h1>
           </div>
@@ -425,6 +439,25 @@
     </section>
   </main>
 
+  <aside id="miniPlayer" class="fixed inset-x-3 z-40 hidden items-center gap-3 rounded-2xl border border-line bg-panel/95 p-2 shadow-2xl backdrop-blur-xl sm:inset-x-auto sm:right-5 sm:w-[min(520px,calc(100vw-2.5rem))]" style="bottom: calc(68px + env(safe-area-inset-bottom));" aria-label="Mini reproductor">
+    <button id="miniPlayerRestore" type="button" class="flex min-w-0 flex-1 items-center gap-3 text-left" aria-label="Volver al reproductor">
+      <span id="miniPlayerVideoContainer" class="block aspect-video w-24 shrink-0 overflow-hidden rounded-lg bg-black sm:w-32"></span>
+      <span id="miniPlayerTitle" class="min-w-0 truncate text-sm font-semibold text-white">Video</span>
+    </button>
+    <button type="button" data-player-action="previous" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Video anterior">
+      <i data-lucide="skip-back" class="h-4 w-4"></i>
+    </button>
+    <button type="button" data-player-action="toggle" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white transition hover:bg-white/10" aria-label="Reproducir video">
+      <i data-player-icon data-lucide="play" class="h-4 w-4"></i><span data-player-label class="sr-only">Reproducir</span>
+    </button>
+    <button type="button" data-player-action="next" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Siguiente video">
+      <i data-lucide="skip-forward" class="h-4 w-4"></i>
+    </button>
+    <button id="miniPlayerClose" type="button" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white" aria-label="Cerrar reproductor">
+      <i data-lucide="x" class="h-4 w-4"></i>
+    </button>
+  </aside>
+
   <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl" aria-label="Navegación inferior" role="tablist">
     <div class="mx-auto grid h-[68px] max-w-xl grid-cols-3 items-center px-3">
       <button id="videosTab" type="button" role="tab" aria-selected="true" aria-controls="videosPanel" data-tab-target="videos" class="flex h-full flex-col items-center justify-center gap-1 text-ember transition" aria-label="Videos">
@@ -586,6 +619,8 @@
     const channelVideosCache = new Map();
     let subscriptionRefreshVersion = 0;
     let channelProfileLoadVersion = 0;
+    let publishedVideoLoadVersion = 0;
+    let publishedVideoRefreshTimer = null;
     const emptyResults = document.getElementById('emptyResults');
     let activeFilter = 'all';
     let toastTimer;
@@ -607,7 +642,10 @@
     document.querySelectorAll('[data-tab-target]').forEach(control => {
       control.addEventListener('click', event => {
         if (control instanceof HTMLAnchorElement) event.preventDefault();
-        if (currentPlayback) closeMainPlayer();
+        if (currentPlayback) {
+          if (control.dataset.tabTarget === 'videos') restoreMainPlayer();
+          else minimizeMainPlayer();
+        }
         activateTab(control.dataset.tabTarget);
         document.getElementById('mobileNav').classList.add('hidden');
       });
@@ -646,6 +684,10 @@
     }));
 
     const mainPlayerVideo = document.getElementById('mainPlayerVideo');
+    const playbackVideoContainer = document.getElementById('playbackVideoContainer');
+    const miniPlayer = document.getElementById('miniPlayer');
+    const miniPlayerVideoContainer = document.getElementById('miniPlayerVideoContainer');
+    const miniPlayerTitle = document.getElementById('miniPlayerTitle');
     const channelProfileModal = document.getElementById('channelProfileModal');
     const channelProfileSubscribe = document.getElementById('channelProfileSubscribe');
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -919,37 +961,154 @@
       playbackView.classList.remove('hidden');
       renderRecommendedVideos(video.id || video.cardId);
       renderPersistentSocial(video);
-      if (video.id && uuidPattern.test(video.id) && video.visibility === 'public') {
-        supabaseClient.rpc('increment_video_views', { p_video_id: video.id })
-          .then(({ data, error }) => {
-            if (error) throw error;
-            const views = Number(data);
-            if (currentPlayback?.id === video.id && Number.isFinite(views)) {
-              currentPlayback.views = views;
-              document.getElementById('playbackViews').textContent = `${views.toLocaleString('es')} vistas`;
-            }
-          })
-          .catch(error => {
-            console.error('No se pudo registrar la reproducción del video:', error);
-            showToast(`No se pudo actualizar el contador de vistas: ${error.message || 'inténtalo de nuevo.'}`);
-          });
-      }
+      miniPlayerTitle.textContent = video.title || 'Video';
+      updatePlaybackControls();
       playbackView.scrollIntoView({ behavior: 'smooth', block: 'start' });
       mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.'));
     }
+
+    function getNavigableVideoCards() {
+      return [...videoGrid.querySelectorAll('.community-card')]
+        .filter(card => !card.classList.contains('hidden') && !hiddenVideoKeys.has(card.dataset.cardKey));
+    }
+
+    function updatePlaybackControls() {
+      const cards = getNavigableVideoCards();
+      const currentIndex = cards.findIndex(card =>
+        (currentPlayback?.cardId && card.dataset.cardKey === String(currentPlayback.cardId))
+        || (currentPlayback?.id && card.dataset.videoId === currentPlayback.id));
+      document.querySelectorAll('[data-player-action="previous"]').forEach(button => {
+        button.disabled = currentIndex <= 0;
+      });
+      document.querySelectorAll('[data-player-action="next"]').forEach(button => {
+        button.disabled = currentIndex < 0 || currentIndex >= cards.length - 1;
+      });
+      document.querySelectorAll('[data-player-action="toggle"]').forEach(button => {
+        const playing = !mainPlayerVideo.paused && !mainPlayerVideo.ended;
+        button.setAttribute('aria-label', playing ? 'Pausar video' : 'Reproducir video');
+        const label = button.querySelector('[data-player-label]');
+        if (label) label.textContent = playing ? 'Pausar' : 'Reproducir';
+        const icon = button.querySelector('[data-player-icon]');
+        if (icon) icon.setAttribute('data-lucide', playing ? 'pause' : 'play');
+      });
+      lucide.createIcons();
+    }
+
+    async function movePlayback(offset) {
+      const cards = getNavigableVideoCards();
+      const currentIndex = cards.findIndex(card =>
+        (currentPlayback?.cardId && card.dataset.cardKey === String(currentPlayback.cardId))
+        || (currentPlayback?.id && card.dataset.videoId === currentPlayback.id));
+      const nextCard = cards[currentIndex + offset];
+      if (nextCard) await playCommunityCard(nextCard);
+    }
+
+    function minimizeMainPlayer() {
+      if (!currentPlayback || !miniPlayer.classList.contains('hidden')) return;
+      miniPlayerTitle.textContent = currentPlayback.title || 'Video';
+      mainPlayerVideo.controls = false;
+      miniPlayerVideoContainer.append(mainPlayerVideo);
+      playbackView.classList.add('hidden');
+      document.getElementById('videosPanel').classList.remove('playback-active');
+      miniPlayer.classList.remove('hidden');
+      updatePlaybackControls();
+    }
+
+    function restoreMainPlayer() {
+      if (!currentPlayback || miniPlayer.classList.contains('hidden')) return;
+      playbackVideoContainer.append(mainPlayerVideo);
+      mainPlayerVideo.controls = true;
+      miniPlayer.classList.add('hidden');
+      document.getElementById('videosPanel').classList.add('playback-active');
+      playbackView.classList.remove('hidden');
+      activateTab('videos');
+      playbackView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      updatePlaybackControls();
+    }
+
+    async function registerPlaybackView() {
+      const playback = currentPlayback;
+      if (!supabaseClient || !playback?.id || !uuidPattern.test(playback.id)
+          || playback.visibility !== 'public' || playback.viewCountRegistered) return;
+      playback.viewCountRegistered = true;
+      try {
+        const { data, error } = await supabaseClient.rpc('increment_video_views', { p_video_id: playback.id });
+        if (error) throw error;
+        const views = Number(data);
+        if (currentPlayback !== playback || !Number.isFinite(views)) return;
+        playback.views = views;
+        document.getElementById('playbackViews').textContent = `${views.toLocaleString('es')} vistas`;
+        const card = videoGrid.querySelector(`[data-database-video-id="${CSS.escape(playback.id)}"]`);
+        if (card) card.dataset.views = String(views);
+      } catch (error) {
+        console.error('No se pudo registrar la reproducción del video:', error);
+        showToast(`No se pudo actualizar el contador de vistas: ${error.message || 'inténtalo de nuevo.'}`);
+      }
+    }
+
     function closeMainPlayer() {
+      if (mainPlayerVideo.parentElement === miniPlayerVideoContainer) playbackVideoContainer.append(mainPlayerVideo);
       mainPlayerVideo.pause();
       mainPlayerVideo.removeAttribute('src');
       mainPlayerVideo.removeAttribute('poster');
       mainPlayerVideo.load();
+      mainPlayerVideo.controls = true;
       currentPlayback = null;
       updatePlaybackEditButton();
       playbackView.classList.add('hidden');
       document.getElementById('videosPanel').classList.remove('playback-active');
+      miniPlayer.classList.add('hidden');
       playbackSocial.replaceChildren();
-      document.getElementById('comunidad').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (document.querySelector('[role="tab"][aria-selected="true"]')?.dataset.tabTarget === 'videos') {
+        document.getElementById('comunidad').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      updatePlaybackControls();
     }
     document.getElementById('backToVideos').addEventListener('click', closeMainPlayer);
+    document.getElementById('miniPlayerRestore').addEventListener('click', restoreMainPlayer);
+    document.getElementById('miniPlayerClose').addEventListener('click', closeMainPlayer);
+    document.querySelectorAll('[data-player-action]').forEach(button => button.addEventListener('click', async () => {
+      if (button.dataset.playerAction === 'toggle') {
+        if (mainPlayerVideo.paused || mainPlayerVideo.ended) {
+          mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.'));
+        } else {
+          mainPlayerVideo.pause();
+        }
+      } else {
+        await movePlayback(button.dataset.playerAction === 'next' ? 1 : -1);
+      }
+    }));
+    mainPlayerVideo.addEventListener('play', () => {
+      document.getElementById('radioAudio').pause();
+      updatePlaybackControls();
+      registerPlaybackView();
+    });
+    mainPlayerVideo.addEventListener('pause', updatePlaybackControls);
+    mainPlayerVideo.addEventListener('ended', updatePlaybackControls);
+    mainPlayerVideo.addEventListener('loadedmetadata', updatePlaybackControls);
+
+    let playbackSwipeStart = null;
+    playbackVideoContainer.addEventListener('touchstart', event => {
+      if (event.touches.length !== 1) {
+        playbackSwipeStart = null;
+        return;
+      }
+      playbackSwipeStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    }, { passive: true });
+    playbackVideoContainer.addEventListener('touchmove', event => {
+      if (!playbackSwipeStart || event.touches.length !== 1) return;
+      const deltaY = event.touches[0].clientY - playbackSwipeStart.y;
+      const deltaX = event.touches[0].clientX - playbackSwipeStart.x;
+      if (deltaY > 45 && deltaY > Math.abs(deltaX) * 1.2) event.preventDefault();
+    }, { passive: false });
+    playbackVideoContainer.addEventListener('touchend', event => {
+      if (!playbackSwipeStart || event.changedTouches.length !== 1) return;
+      const deltaY = event.changedTouches[0].clientY - playbackSwipeStart.y;
+      const deltaX = event.changedTouches[0].clientX - playbackSwipeStart.x;
+      playbackSwipeStart = null;
+      if (deltaY > 85 && deltaY > Math.abs(deltaX) * 1.2) minimizeMainPlayer();
+    }, { passive: true });
+
     async function playCommunityCard(card) {
       const button = card.querySelector('.video-launch');
       if (!button) return;
@@ -1014,7 +1173,6 @@
       if (currentPlayback?.userId) openChannelProfile(currentPlayback.userId);
     });
     mainPlayerVideo.addEventListener('error', () => showToast('No se pudo cargar este video. Comprueba tu conexión e inténtalo de nuevo.'));
-    mainPlayerVideo.addEventListener('play', () => document.getElementById('radioAudio').pause());
 
     const authModal = document.getElementById('authModal');
     const authForm = document.getElementById('authForm');
@@ -1662,25 +1820,29 @@
 
     async function loadPublishedVideos() {
       if (!supabaseClient) return;
+      const loadVersion = ++publishedVideoLoadVersion;
       let videos = [];
-      let videosLoaded = false;
+      let offset = 0;
       try {
-        const { data, error } = await supabaseClient
-          .from('videos')
-          .select('*');
-        if (error) {
-          console.warn('No se pudieron cargar los videos públicos desde Supabase:', error);
-        } else {
-          videosLoaded = true;
-          videos = Array.isArray(data)
-            ? data.filter(Boolean)
-              .filter(isPublicVideo)
-              .map(video => ({ ...video, user_id: video.user_id || video.usuario_id || '' }))
-              .sort((first, second) => new Date(second.created_at || 0) - new Date(first.created_at || 0))
-            : [];
+        while (true) {
+          const { data, error } = await supabaseClient
+            .from('videos')
+            .select('*')
+            .eq('visibility', 'public')
+            .order('created_at', { ascending: false })
+            .range(offset, offset + 999);
+          if (error) throw error;
+          const page = Array.isArray(data) ? data.filter(Boolean) : [];
+          videos.push(...page);
+          if (page.length < 1000) break;
+          offset += page.length;
         }
+        videos = videos
+          .filter(isPublicVideo)
+          .map(video => ({ ...video, user_id: video.user_id || video.usuario_id || '' }));
       } catch (error) {
         console.warn('No se pudieron cargar los videos públicos desde Supabase:', error);
+        throw error;
       }
 
       const channelIds = [...new Set(videos.map(video => video.user_id).filter(Boolean))];
@@ -1706,13 +1868,12 @@
         }
       })();
       const previewResults = await Promise.all(videos.map(video => resolveVideoPreview(video)));
+      if (loadVersion !== publishedVideoLoadVersion) return;
       videos.forEach((video, index) => {
         video.preview = previewResults[index];
       });
 
-      if (videosLoaded) {
-        videoGrid.querySelectorAll('[data-database-video]').forEach(card => card.remove());
-      }
+      videoGrid.querySelectorAll('[data-database-video]').forEach(card => card.remove());
       const fragment = document.createDocumentFragment();
       videos.forEach(video => {
         const card = document.createElement('article');
@@ -1798,6 +1959,7 @@
       lucide.createIcons();
       filterVideos(searchInputs[0]?.value || '');
       await channelDetailsPromise;
+      if (loadVersion !== publishedVideoLoadVersion) return;
       channelIds.forEach(channelId => {
         const profile = channelProfiles.get(channelId);
         const channelName = profile?.display_name || `Canal · ${channelId.slice(0, 8)}`;
@@ -1831,6 +1993,48 @@
         updateChannelControls(channelId);
       });
       filterVideos(searchInputs[0]?.value || '');
+    }
+
+    function subscribeToPublishedVideos() {
+      if (!supabaseClient) return;
+      let reportedRealtimeFailure = false;
+      supabaseClient.channel('public-videos-feed')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, payload => {
+          const video = payload.new;
+          const existingCard = video?.id
+            ? videoGrid.querySelector(`[data-database-video-id="${CSS.escape(video.id)}"]`)
+            : null;
+          if (payload.eventType === 'UPDATE' && existingCard
+              && existingCard.dataset.userId === (video.user_id || '')
+              && existingCard.dataset.videoTitle === (video.title || 'Video sin título')
+              && existingCard.dataset.videoDescription === (video.description || '')
+              && existingCard.dataset.visibility === (video.visibility || 'public')
+              && existingCard.dataset.createdAt === (video.created_at || '')
+              && existingCard.dataset.thumbnailCustomUrl === (video.thumbnail_url || '')
+              && existingCard.querySelector('.video-launch')?.dataset.videoPath === (video.video_path || '')
+              && existingCard.querySelector('.video-launch')?.dataset.thumbnailPath === (video.thumbnail_path || '')) {
+            existingCard.dataset.views = String(video.view_count || 0);
+            if (currentPlayback?.id === video.id) {
+              currentPlayback.views = Number(video.view_count) || 0;
+              document.getElementById('playbackViews').textContent = `${currentPlayback.views.toLocaleString('es')} vistas`;
+            }
+            return;
+          }
+          clearTimeout(publishedVideoRefreshTimer);
+          publishedVideoRefreshTimer = setTimeout(() => {
+            loadPublishedVideos().catch(error => {
+              showToast(`No se pudo sincronizar el feed: ${error.message || 'comprueba tu conexión.'}`);
+            });
+          }, 150);
+        })
+        .subscribe(status => {
+          if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && !reportedRealtimeFailure) {
+            reportedRealtimeFailure = true;
+            const error = new Error(`Estado de suscripción: ${status}`);
+            console.error('No se pudo activar la sincronización en tiempo real del feed:', error);
+            showToast('No se pudo activar la sincronización del feed. Ejecuta la última versión de schema.sql en Supabase.');
+          }
+        });
     }
 
     document.addEventListener('click', async event => {
@@ -3199,22 +3403,51 @@
         }
         const vote = button.dataset.socialAction;
         const voteButtons = panel.querySelectorAll('[data-social-action="like"], [data-social-action="dislike"]');
+        const likeButton = panel.querySelector('[data-social-action="like"]');
+        const dislikeButton = panel.querySelector('[data-social-action="dislike"]');
+        const currentVote = likeButton.getAttribute('aria-pressed') === 'true'
+          ? 'like'
+          : dislikeButton.getAttribute('aria-pressed') === 'true' ? 'dislike' : null;
+        const previousState = {
+          vote: currentVote,
+          likes: Number(likeButton.querySelector('[data-social-count]').textContent) || 0,
+          dislikes: Number(dislikeButton.querySelector('[data-social-count]').textContent) || 0
+        };
+        const nextVote = currentVote === vote ? null : vote;
+        const nextState = {
+          vote: nextVote,
+          likes: previousState.likes + (nextVote === 'like' ? 1 : 0) - (currentVote === 'like' ? 1 : 0),
+          dislikes: previousState.dislikes + (nextVote === 'dislike' ? 1 : 0) - (currentVote === 'dislike' ? 1 : 0)
+        };
+        const renderVoteState = state => {
+          likeButton.querySelector('[data-social-count]').textContent = String(state.likes);
+          dislikeButton.querySelector('[data-social-count]').textContent = String(state.dislikes);
+          [likeButton, dislikeButton].forEach(voteButton => {
+            const selected = voteButton.dataset.socialAction === state.vote;
+            voteButton.setAttribute('aria-pressed', String(selected));
+            voteButton.classList.toggle('text-ember', selected);
+            voteButton.classList.toggle('text-zinc-300', !selected);
+          });
+        };
+        renderVoteState(nextState);
         voteButtons.forEach(voteButton => { voteButton.disabled = true; });
         try {
-          const { data, error } = await supabaseClient.from('video_reactions')
-            .select('vote').eq('video_id', video.id).eq('user_id', currentUser.id).maybeSingle();
-          if (error) throw error;
-          const result = data?.vote === vote
-            ? await supabaseClient.from('video_reactions').delete().eq('video_id', video.id).eq('user_id', currentUser.id)
+          const result = nextVote === null
+            ? await supabaseClient.from('video_reactions').delete()
+              .eq('video_id', video.id).eq('user_id', currentUser.id)
             : await supabaseClient.from('video_reactions').upsert({
               video_id: video.id,
               user_id: currentUser.id,
-              vote,
+              vote: nextVote,
               updated_at: new Date().toISOString()
             }, { onConflict: 'video_id,user_id' });
           if (result.error) throw result.error;
-          await refreshPersistentSocial(video);
+          refreshPersistentSocial(video).catch(error => {
+            console.error('No se pudieron actualizar los contadores del video:', error);
+            showToast(`Tu voto se guardó, pero no se pudieron actualizar los contadores: ${error.message || 'inténtalo de nuevo.'}`);
+          });
         } catch (error) {
+          renderVoteState(previousState);
           showToast(`No se pudo guardar tu voto: ${error.message || 'inténtalo de nuevo.'}`);
         } finally {
           voteButtons.forEach(voteButton => { voteButton.disabled = false; });
@@ -3575,6 +3808,7 @@
     document.getElementById('clipper').append(clipperSocialHost);
     createSocialPanel(clipperSocialHost, 'clipper-player', 'mx-6 mb-6 sm:mx-9 lg:mx-11');
     if (supabaseClient) {
+      subscribeToPublishedVideos();
       loadPublishedVideos().catch(error => showToast(error.message || 'No se pudieron cargar los videos públicos.'));
     }
   </script>
