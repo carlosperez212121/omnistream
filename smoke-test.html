@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OmniStream · prueba de carga</title>
+  <style>
+    body {
+      align-items: center;
+      background: #0b0c0f;
+      color: #f4f4f5;
+      display: flex;
+      font: 16px system-ui, sans-serif;
+      justify-content: center;
+      margin: 0;
+      min-height: 100vh;
+    }
+    main {
+      border: 1px solid #252830;
+      border-radius: 16px;
+      max-width: 32rem;
+      padding: 2rem;
+      text-align: center;
+    }
+    button {
+      background: #ff7759;
+      border: 0;
+      border-radius: 999px;
+      color: #0b0c0f;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      margin-top: 1rem;
+      padding: 0.75rem 1.25rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Prueba de carga correcta</h1>
+    <p>Esta página mínima se cargó sin ejecutar la aplicación ni sus scripts.</p>
+    <p id="reload-count">Recargas en esta pestaña: 0</p>
+    <button id="reload" type="button">Recargar esta página</button>
+  </main>
+  <script>
+    const countKey = 'omnistream.smokeTestReloads';
+    let reloads = 0;
+    try {
+      reloads = Number(sessionStorage.getItem(countKey)) || 0;
+      sessionStorage.setItem(countKey, String(reloads + 1));
+    } catch (error) {
+      console.warn('No se pudo guardar el contador de recargas:', error);
+    }
+    document.getElementById('reload-count').textContent =
+      `Recargas en esta pestaña: ${reloads}`;
+    document.getElementById('reload').addEventListener('click', () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>
