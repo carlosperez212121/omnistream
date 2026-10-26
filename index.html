@@ -439,21 +439,21 @@
     </section>
   </main>
 
-  <aside id="miniPlayer" class="fixed inset-x-3 z-40 hidden items-center gap-3 rounded-2xl border border-line bg-panel/95 p-2 shadow-2xl backdrop-blur-xl sm:inset-x-auto sm:right-5 sm:w-[min(520px,calc(100vw-2.5rem))]" style="bottom: calc(68px + env(safe-area-inset-bottom));" aria-label="Mini reproductor">
-    <button id="miniPlayerRestore" type="button" class="flex min-w-0 flex-1 items-center gap-3 text-left" aria-label="Volver al reproductor">
-      <span id="miniPlayerVideoContainer" class="block aspect-video w-24 shrink-0 overflow-hidden rounded-lg bg-black sm:w-32"></span>
+  <aside id="miniPlayer" class="fixed right-3 z-40 hidden w-[min(360px,calc(100vw-1.5rem))] items-center gap-2 rounded-2xl border border-line bg-panel/95 p-2 shadow-2xl backdrop-blur-xl sm:right-5 sm:w-[min(520px,calc(100vw-2.5rem))] sm:gap-3" style="bottom: calc(68px + env(safe-area-inset-bottom));" aria-label="Mini reproductor">
+    <button id="miniPlayerRestore" type="button" class="flex min-w-0 flex-1 items-center gap-2 text-left sm:gap-3" aria-label="Volver al reproductor">
+      <span id="miniPlayerVideoContainer" class="block aspect-video w-16 shrink-0 overflow-hidden rounded-lg bg-black sm:w-32"></span>
       <span id="miniPlayerTitle" class="min-w-0 truncate text-sm font-semibold text-white">Video</span>
     </button>
-    <button type="button" data-player-action="previous" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Video anterior">
+    <button type="button" data-player-action="previous" class="grid h-8 w-8 shrink-0 place-items-center rounded-full text-zinc-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-9" aria-label="Video anterior">
       <i data-lucide="skip-back" class="h-4 w-4"></i>
     </button>
-    <button type="button" data-player-action="toggle" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white transition hover:bg-white/10" aria-label="Reproducir video">
+    <button type="button" data-player-action="toggle" class="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white transition hover:bg-white/10 sm:h-9 sm:w-9" aria-label="Reproducir video">
       <i data-player-icon data-lucide="play" class="h-4 w-4"></i><span data-player-label class="sr-only">Reproducir</span>
     </button>
-    <button type="button" data-player-action="next" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Siguiente video">
+    <button type="button" data-player-action="next" class="grid h-8 w-8 shrink-0 place-items-center rounded-full text-zinc-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-9" aria-label="Siguiente video">
       <i data-lucide="skip-forward" class="h-4 w-4"></i>
     </button>
-    <button id="miniPlayerClose" type="button" class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white" aria-label="Cerrar reproductor">
+    <button id="miniPlayerClose" type="button" class="grid h-8 w-8 shrink-0 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white sm:h-9 sm:w-9" aria-label="Cerrar reproductor">
       <i data-lucide="x" class="h-4 w-4"></i>
     </button>
   </aside>
