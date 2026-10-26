@@ -3266,8 +3266,10 @@
 
     const hiddenVideosStorageKey = 'omnistream.hiddenVideos';
     const savedDemoVideosStorageKey = 'omnistream.savedDemoVideos';
+    const simulatedReactionsStorageKey = 'omnistream.simulatedReactions';
     let hiddenVideoKeys = new Set();
     let savedDemoVideoKeys = new Set();
+    const simulatedReactionStates = new Map();
     let persistentSocialVersion = 0;
     try {
       const savedHiddenVideos = JSON.parse(window.localStorage.getItem(hiddenVideosStorageKey) || '[]');
@@ -3277,6 +3279,48 @@
     } catch (error) {
       console.warn('No se pudieron cargar los videos ocultos:', error);
       showToast('No se pudieron cargar los videos ocultos de este navegador.');
+    }
+    try {
+      const savedSimulatedReactions = JSON.parse(window.localStorage.getItem(simulatedReactionsStorageKey) || '{}');
+      if (savedSimulatedReactions && typeof savedSimulatedReactions === 'object' && !Array.isArray(savedSimulatedReactions)) {
+        Object.entries(savedSimulatedReactions).forEach(([key, state]) => {
+          if (state && (state.vote === null || state.vote === 'like' || state.vote === 'dislike')
+              && Number.isInteger(state.likes) && state.likes >= 0
+              && Number.isInteger(state.dislikes) && state.dislikes >= 0) {
+            simulatedReactionStates.set(key, state);
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('No se pudieron cargar los contadores simulados de votos:', error);
+    }
+
+    function simulatedReactionKey(videoId, userId) {
+      return `${userId}:${videoId}`;
+    }
+
+    function saveSimulatedReaction(videoId, userId, state) {
+      simulatedReactionStates.set(simulatedReactionKey(videoId, userId), state);
+      try {
+        window.localStorage.setItem(
+          simulatedReactionsStorageKey,
+          JSON.stringify(Object.fromEntries(simulatedReactionStates))
+        );
+      } catch (error) {
+        console.warn('No se pudo guardar el contador simulado de votos en este navegador:', error);
+      }
+    }
+
+    function clearSimulatedReaction(videoId, userId) {
+      simulatedReactionStates.delete(simulatedReactionKey(videoId, userId));
+      try {
+        window.localStorage.setItem(
+          simulatedReactionsStorageKey,
+          JSON.stringify(Object.fromEntries(simulatedReactionStates))
+        );
+      } catch (error) {
+        console.warn('No se pudo limpiar el contador simulado de votos en este navegador:', error);
+      }
     }
 
     function initializeVideoCard(card) {
@@ -3467,11 +3511,14 @@
           || currentPlayback?.id !== video.id
           || (currentUser?.id || null) !== userId) return;
       const authorNames = new Map(authorProfiles.map(profile => [profile.user_id, profile.display_name]));
-      const vote = voteResult.data?.vote || null;
-      const likes = Number.isInteger(likesResult.count) && likesResult.count >= 0
+      const localReactionState = userId
+        ? simulatedReactionStates.get(simulatedReactionKey(video.id, userId))
+        : null;
+      const vote = localReactionState ? localReactionState.vote : voteResult.data?.vote || null;
+      const likes = localReactionState ? localReactionState.likes : Number.isInteger(likesResult.count) && likesResult.count >= 0
         ? likesResult.count
         : previousLikes;
-      const dislikes = Number.isInteger(dislikesResult.count) && dislikesResult.count >= 0
+      const dislikes = localReactionState ? localReactionState.dislikes : Number.isInteger(dislikesResult.count) && dislikesResult.count >= 0
         ? dislikesResult.count
         : previousDislikes;
       const synchronizedVoteState = {
@@ -3616,6 +3663,7 @@
           showToast('Las cuentas locales no pueden registrar votos. Inicia sesión con tu cuenta de Supabase.');
           return;
         }
+        const userId = currentUser.id;
         const vote = button.dataset.socialAction;
         const voteButtons = panel.querySelectorAll('[data-social-action="like"], [data-social-action="dislike"]');
         const likeButton = panel.querySelector('[data-social-action="like"]');
@@ -3631,8 +3679,8 @@
         const nextVote = currentVote === vote ? null : vote;
         const nextState = {
           vote: nextVote,
-          likes: previousState.likes + (nextVote === 'like' ? 1 : 0) - (currentVote === 'like' ? 1 : 0),
-          dislikes: previousState.dislikes + (nextVote === 'dislike' ? 1 : 0) - (currentVote === 'dislike' ? 1 : 0)
+          likes: Math.max(0, previousState.likes + (nextVote === 'like' ? 1 : 0) - (currentVote === 'like' ? 1 : 0)),
+          dislikes: Math.max(0, previousState.dislikes + (nextVote === 'dislike' ? 1 : 0) - (currentVote === 'dislike' ? 1 : 0))
         };
         const renderVoteState = state => {
           likeButton.querySelector('[data-social-count]').textContent = String(state.likes);
@@ -3649,14 +3697,15 @@
         try {
           const result = nextVote === null
             ? await supabaseClient.from('video_reactions').delete()
-              .eq('video_id', video.id).eq('user_id', currentUser.id)
+              .eq('video_id', video.id).eq('user_id', userId)
             : await supabaseClient.from('video_reactions').upsert({
               video_id: video.id,
-              user_id: currentUser.id,
+              user_id: userId,
               vote: nextVote,
               updated_at: new Date().toISOString()
             }, { onConflict: 'video_id,user_id' });
           if (result.error) throw result.error;
+          clearSimulatedReaction(video.id, userId);
           try {
             const synchronizedVoteState = await refreshPersistentSocial(video);
             if (synchronizedVoteState) renderVoteState(synchronizedVoteState);
@@ -3665,8 +3714,18 @@
             showToast(`Tu voto se guardó, pero no se pudieron actualizar los contadores: ${error.message || 'inténtalo de nuevo.'}`);
           }
         } catch (error) {
-          renderVoteState(previousState);
-          showToast(`No se pudo guardar tu voto: ${error.message || 'inténtalo de nuevo.'}`);
+          const permissionDenied = error?.code === '42501'
+            || [401, 403, '401', '403'].includes(error?.status ?? error?.statusCode)
+            || /permission denied|row-level security|not authorized/i.test(error?.message || '');
+          if (permissionDenied) {
+            console.warn('Supabase rechazó el voto por permisos; se conserva un contador simulado localmente.', error);
+            saveSimulatedReaction(video.id, userId, nextState);
+            renderVoteState(nextState);
+            showToast('Supabase no permite guardar el voto; se conserva el contador simulado en este navegador.');
+          } else {
+            renderVoteState(previousState);
+            showToast(`No se pudo guardar tu voto: ${error.message || 'inténtalo de nuevo.'}`);
+          }
         } finally {
           voteButtons.forEach(voteButton => { voteButton.disabled = false; });
         }
