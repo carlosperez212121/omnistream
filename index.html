@@ -617,6 +617,28 @@
     const busyChannels = new Set();
     const channelProfiles = new Map();
     const channelVideosCache = new Map();
+    const videoPreviewObserver = 'IntersectionObserver' in window
+      ? new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          const card = entry.target;
+          const launch = card.querySelector('.video-launch');
+          if (!launch) return;
+          launch.dataset.previewVisible = String(entry.isIntersecting);
+          if (entry.isIntersecting) {
+            loadVideoCardPreview(card);
+            return;
+          }
+          const preview = launch.querySelector('video');
+          if (preview) {
+            preview.pause();
+            preview.removeAttribute('src');
+            preview.load();
+            preview.remove();
+            launch.dataset.previewLoaded = 'false';
+          }
+        });
+      }, { rootMargin: '300px 0px' })
+      : null;
     let subscriptionRefreshVersion = 0;
     let channelProfileLoadVersion = 0;
     let publishedVideoLoadVersion = 0;
@@ -695,6 +717,8 @@
     const playbackSocial = document.getElementById('playbackSocial');
     const recommendedVideos = document.getElementById('recommendedVideos');
     let currentPlayback = null;
+    let playbackStartVersion = 0;
+    let playbackNavigationPending = false;
     const playbackEditVideo = document.getElementById('playbackEditVideo');
     const editVideoModal = document.getElementById('editVideoModal');
     const editVideoForm = document.getElementById('editVideoForm');
@@ -749,6 +773,7 @@
         const image = document.createElement('img');
         image.src = imageUrl;
         image.alt = '';
+        image.loading = 'lazy';
         image.className = className;
         image.referrerPolicy = 'no-referrer';
         container.append(image);
@@ -766,6 +791,44 @@
           if (preview.duration > 0) preview.currentTime = Math.min(0.1, preview.duration / 2);
         }, { once: true });
         container.append(preview);
+      }
+    }
+
+    async function loadVideoCardPreview(card) {
+      const launch = card.querySelector('.video-launch');
+      if (!launch || launch.dataset.previewLoading === 'true'
+          || launch.dataset.previewLoaded === 'true') return;
+      launch.dataset.previewLoading = 'true';
+      try {
+        const preview = launch.dataset.generatedThumbnailUrl || launch.dataset.previewVideoUrl
+          ? {
+            imageUrl: isValidThumbnailUrl(launch.dataset.thumbnailCustomUrl)
+              ? launch.dataset.thumbnailCustomUrl || launch.dataset.generatedThumbnailUrl
+              : launch.dataset.generatedThumbnailUrl,
+            generatedImageUrl: launch.dataset.generatedThumbnailUrl || '',
+            videoUrl: launch.dataset.previewVideoUrl || ''
+          }
+          : await resolveVideoPreview({
+            title: card.dataset.videoTitle,
+            thumbnail_path: launch.dataset.thumbnailPath,
+            thumbnail_url: launch.dataset.thumbnailCustomUrl,
+            video_path: launch.dataset.videoPath
+          });
+        if (!card.isConnected || launch.dataset.previewVisible !== 'true') return;
+        launch.dataset.thumbnailUrl = preview.imageUrl || '';
+        launch.dataset.generatedThumbnailUrl = preview.generatedImageUrl || '';
+        launch.dataset.previewVideoUrl = preview.videoUrl || '';
+        addVideoPreview(
+          launch,
+          preview.imageUrl,
+          preview.videoUrl,
+          'absolute inset-0 h-full w-full object-cover'
+        );
+        launch.dataset.previewLoaded = 'true';
+      } catch (error) {
+        console.warn(`No se pudo preparar la vista previa de "${card.dataset.videoTitle || 'sin título'}":`, error);
+      } finally {
+        delete launch.dataset.previewLoading;
       }
     }
 
@@ -964,7 +1027,7 @@
       miniPlayerTitle.textContent = video.title || 'Video';
       updatePlaybackControls();
       playbackView.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.'));
+      requestMainPlayerPlay();
     }
 
     function getNavigableVideoCards() {
@@ -972,26 +1035,53 @@
         .filter(card => !card.classList.contains('hidden') && !hiddenVideoKeys.has(card.dataset.cardKey));
     }
 
-    function updatePlaybackControls() {
+    function updatePlaybackControls(playingOverride = null) {
       const cards = getNavigableVideoCards();
       const currentIndex = cards.findIndex(card =>
         (currentPlayback?.cardId && card.dataset.cardKey === String(currentPlayback.cardId))
         || (currentPlayback?.id && card.dataset.videoId === currentPlayback.id));
       document.querySelectorAll('[data-player-action="previous"]').forEach(button => {
-        button.disabled = currentIndex <= 0;
+        button.disabled = playbackNavigationPending || currentIndex <= 0;
       });
       document.querySelectorAll('[data-player-action="next"]').forEach(button => {
-        button.disabled = currentIndex < 0 || currentIndex >= cards.length - 1;
+        button.disabled = playbackNavigationPending || currentIndex < 0 || currentIndex >= cards.length - 1;
       });
+      let iconChanged = false;
       document.querySelectorAll('[data-player-action="toggle"]').forEach(button => {
-        const playing = !mainPlayerVideo.paused && !mainPlayerVideo.ended;
+        const playing = typeof playingOverride === 'boolean'
+          ? playingOverride
+          : !mainPlayerVideo.paused && !mainPlayerVideo.ended;
         button.setAttribute('aria-label', playing ? 'Pausar video' : 'Reproducir video');
         const label = button.querySelector('[data-player-label]');
         if (label) label.textContent = playing ? 'Pausar' : 'Reproducir';
         const icon = button.querySelector('[data-player-icon]');
-        if (icon) icon.setAttribute('data-lucide', playing ? 'pause' : 'play');
+        if (icon && icon.getAttribute('data-lucide') !== (playing ? 'pause' : 'play')) {
+          icon.setAttribute('data-lucide', playing ? 'pause' : 'play');
+          iconChanged = true;
+        }
       });
-      lucide.createIcons();
+      if (iconChanged) {
+        lucide.createIcons({ root: playbackView });
+        lucide.createIcons({ root: miniPlayer });
+      }
+    }
+
+    function requestMainPlayerPlay() {
+      const startVersion = ++playbackStartVersion;
+      try {
+        const playRequest = mainPlayerVideo.play();
+        updatePlaybackControls(true);
+        Promise.resolve(playRequest).catch(() => {
+          if (startVersion !== playbackStartVersion) return;
+          updatePlaybackControls(false);
+          showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.');
+        });
+      } catch {
+        if (startVersion === playbackStartVersion) {
+          updatePlaybackControls(false);
+          showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.');
+        }
+      }
     }
 
     async function movePlayback(offset) {
@@ -1047,6 +1137,7 @@
     }
 
     function closeMainPlayer() {
+      playbackStartVersion++;
       if (mainPlayerVideo.parentElement === miniPlayerVideoContainer) playbackVideoContainer.append(mainPlayerVideo);
       mainPlayerVideo.pause();
       mainPlayerVideo.removeAttribute('src');
@@ -1070,20 +1161,35 @@
     document.querySelectorAll('[data-player-action]').forEach(button => button.addEventListener('click', async () => {
       if (button.dataset.playerAction === 'toggle') {
         if (mainPlayerVideo.paused || mainPlayerVideo.ended) {
-          mainPlayerVideo.play().catch(() => showToast('No se pudo iniciar el video. Usa los controles del reproductor para volver a intentarlo.'));
+          requestMainPlayerPlay();
         } else {
+          playbackStartVersion++;
           mainPlayerVideo.pause();
+          updatePlaybackControls(false);
         }
       } else {
-        await movePlayback(button.dataset.playerAction === 'next' ? 1 : -1);
+        if (playbackNavigationPending) return;
+        playbackNavigationPending = true;
+        updatePlaybackControls();
+        try {
+          await movePlayback(button.dataset.playerAction === 'next' ? 1 : -1);
+        } finally {
+          playbackNavigationPending = false;
+          updatePlaybackControls();
+        }
       }
     }));
     mainPlayerVideo.addEventListener('play', () => {
       document.getElementById('radioAudio').pause();
       updatePlaybackControls();
+    });
+    mainPlayerVideo.addEventListener('playing', () => {
+      updatePlaybackControls(true);
       registerPlaybackView();
     });
-    mainPlayerVideo.addEventListener('pause', updatePlaybackControls);
+    mainPlayerVideo.addEventListener('pause', () => {
+      updatePlaybackControls(false);
+    });
     mainPlayerVideo.addEventListener('ended', updatePlaybackControls);
     mainPlayerVideo.addEventListener('loadedmetadata', updatePlaybackControls);
 
@@ -1847,33 +1953,41 @@
 
       const channelIds = [...new Set(videos.map(video => video.user_id).filter(Boolean))];
       const channelDetailsPromise = (async () => {
-        const counts = await Promise.all(channelIds.map(async channelId => [
-          channelId,
-          await loadSubscriberCount(channelId)
-        ]));
-        counts.forEach(([channelId, count]) => subscriberCounts.set(channelId, count));
+        for (let offset = 0; offset < channelIds.length; offset += 8) {
+          const counts = await Promise.all(channelIds.slice(offset, offset + 8).map(async channelId => [
+            channelId,
+            await loadSubscriberCount(channelId)
+          ]));
+          counts.forEach(([channelId, count]) => subscriberCounts.set(channelId, count));
+        }
         try {
-          const { data, error } = channelIds.length
-            ? await supabaseClient.from('channel_profiles').select('user_id, display_name, avatar_url').in('user_id', channelIds)
-            : { data: [], error: null };
-          if (error) {
-            console.warn('No se pudieron cargar los perfiles de los canales desde Supabase:', error);
-          } else if (Array.isArray(data)) {
-            data.forEach(profile => {
-              if (profile?.user_id) channelProfiles.set(profile.user_id, profile);
-            });
+          for (let offset = 0; offset < channelIds.length; offset += 100) {
+            const { data, error } = await supabaseClient.from('channel_profiles')
+              .select('user_id, display_name, avatar_url')
+              .in('user_id', channelIds.slice(offset, offset + 100));
+            if (error) throw error;
+            if (Array.isArray(data)) {
+              data.forEach(profile => {
+                if (profile?.user_id) channelProfiles.set(profile.user_id, profile);
+              });
+            }
           }
         } catch (error) {
           console.warn('No se pudieron cargar los perfiles de los canales desde Supabase:', error);
         }
       })();
-      const previewResults = await Promise.all(videos.map(video => resolveVideoPreview(video)));
       if (loadVersion !== publishedVideoLoadVersion) return;
-      videos.forEach((video, index) => {
-        video.preview = previewResults[index];
-      });
 
-      videoGrid.querySelectorAll('[data-database-video]').forEach(card => card.remove());
+      videoPreviewObserver?.disconnect();
+      videoGrid.querySelectorAll('[data-database-video]').forEach(card => {
+        const preview = card.querySelector('.video-launch video');
+        if (preview) {
+          preview.pause();
+          preview.removeAttribute('src');
+          preview.load();
+        }
+        card.remove();
+      });
       const fragment = document.createDocumentFragment();
       videos.forEach(video => {
         const card = document.createElement('article');
@@ -1901,12 +2015,17 @@
         launch.type = 'button';
         launch.className = 'video-launch poster relative block aspect-[1.28] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-950 to-emerald-900 text-left';
         launch.dataset.videoPath = video.video_path || '';
-        launch.dataset.thumbnailUrl = video.preview?.imageUrl || '';
-        launch.dataset.generatedThumbnailUrl = video.preview?.generatedImageUrl || '';
+        launch.dataset.thumbnailUrl = isValidThumbnailUrl(video.thumbnail_url) ? video.thumbnail_url || '' : '';
+        launch.dataset.generatedThumbnailUrl = '';
         launch.dataset.thumbnailPath = video.thumbnail_path || '';
-        launch.dataset.previewVideoUrl = video.preview?.videoUrl || '';
+        launch.dataset.previewVideoUrl = '';
         launch.setAttribute('aria-label', `Reproducir ${videoTitle}`);
-        addVideoPreview(launch, video.preview?.imageUrl || '', video.preview?.videoUrl || '', 'absolute inset-0 h-full w-full object-cover');
+        if (launch.dataset.thumbnailUrl) {
+          addVideoPreview(launch, launch.dataset.thumbnailUrl, '', 'absolute inset-0 h-full w-full object-cover');
+          launch.dataset.previewLoaded = 'true';
+        } else {
+          launch.dataset.previewLoaded = 'false';
+        }
         const play = document.createElement('span');
         play.className = 'play-overlay absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100';
         play.innerHTML = '<i data-lucide="play" class="h-11 w-11 fill-white text-white drop-shadow"></i>';
@@ -1956,6 +2075,16 @@
         fragment.append(card);
       });
       videoGrid.append(fragment);
+      if (videoPreviewObserver) {
+        videoGrid.querySelectorAll('[data-database-video]').forEach(card => videoPreviewObserver.observe(card));
+      } else {
+        videoGrid.querySelectorAll('[data-database-video]').forEach((card, index) => {
+          if (index < 8) {
+            card.querySelector('.video-launch').dataset.previewVisible = 'true';
+            loadVideoCardPreview(card);
+          }
+        });
+      }
       lucide.createIcons();
       filterVideos(searchInputs[0]?.value || '');
       await channelDetailsPromise;
@@ -3151,7 +3280,7 @@
         addVideoPreview(
           button,
           launch?.dataset.thumbnailUrl || '',
-          launch?.dataset.previewVideoUrl || launch?.querySelector('video')?.src || '',
+          '',
           'absolute inset-0 h-full w-full object-cover'
         );
         button.setAttribute('aria-label', `Reproducir ${card.dataset.videoTitle}`);
@@ -3442,10 +3571,12 @@
               updated_at: new Date().toISOString()
             }, { onConflict: 'video_id,user_id' });
           if (result.error) throw result.error;
-          refreshPersistentSocial(video).catch(error => {
+          try {
+            await refreshPersistentSocial(video);
+          } catch (error) {
             console.error('No se pudieron actualizar los contadores del video:', error);
             showToast(`Tu voto se guardó, pero no se pudieron actualizar los contadores: ${error.message || 'inténtalo de nuevo.'}`);
-          });
+          }
         } catch (error) {
           renderVoteState(previousState);
           showToast(`No se pudo guardar tu voto: ${error.message || 'inténtalo de nuevo.'}`);
