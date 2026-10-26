@@ -2612,7 +2612,7 @@
       const video = document.createElement('video');
       const sourceUrl = URL.createObjectURL(file);
       video.muted = true;
-      video.preload = 'auto';
+      video.preload = 'metadata';
       try {
         await new Promise((resolve, reject) => {
           video.addEventListener('loadeddata', resolve, { once: true });
@@ -3267,9 +3267,11 @@
     const hiddenVideosStorageKey = 'omnistream.hiddenVideos';
     const savedDemoVideosStorageKey = 'omnistream.savedDemoVideos';
     const simulatedReactionsStorageKey = 'omnistream.simulatedReactions';
+    const pendingSocialCommentsStorageKey = 'omnistream.pendingSocialComments';
     let hiddenVideoKeys = new Set();
     let savedDemoVideoKeys = new Set();
     const simulatedReactionStates = new Map();
+    const pendingSocialComments = new Map();
     let persistentSocialVersion = 0;
     try {
       const savedHiddenVideos = JSON.parse(window.localStorage.getItem(hiddenVideosStorageKey) || '[]');
@@ -3293,6 +3295,23 @@
       }
     } catch (error) {
       console.warn('No se pudieron cargar los contadores simulados de votos:', error);
+    }
+    try {
+      const savedComments = JSON.parse(window.localStorage.getItem(pendingSocialCommentsStorageKey) || '{}');
+      if (savedComments && typeof savedComments === 'object' && !Array.isArray(savedComments)) {
+        Object.entries(savedComments).forEach(([key, comments]) => {
+          if (Array.isArray(comments)) {
+            pendingSocialComments.set(key, comments.filter(comment =>
+              comment && typeof comment.id === 'string'
+              && typeof comment.user_id === 'string'
+              && typeof comment.content === 'string'
+              && typeof comment.created_at === 'string'
+            ));
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('No se pudieron cargar los comentarios locales pendientes:', error);
     }
 
     function simulatedReactionKey(videoId, userId) {
@@ -3320,6 +3339,40 @@
         );
       } catch (error) {
         console.warn('No se pudo limpiar el contador simulado de votos en este navegador:', error);
+      }
+    }
+
+    function pendingSocialCommentsKey(videoId, userId) {
+      return `${userId}:${videoId}`;
+    }
+
+    function savePendingSocialComment(videoId, userId, comment) {
+      const key = pendingSocialCommentsKey(videoId, userId);
+      const comments = pendingSocialComments.get(key) || [];
+      comments.push(comment);
+      pendingSocialComments.set(key, comments);
+      try {
+        window.localStorage.setItem(
+          pendingSocialCommentsStorageKey,
+          JSON.stringify(Object.fromEntries(pendingSocialComments))
+        );
+      } catch (error) {
+        console.warn('No se pudo guardar el comentario pendiente en este navegador:', error);
+      }
+    }
+
+    function removePendingSocialComment(videoId, userId, commentId) {
+      const key = pendingSocialCommentsKey(videoId, userId);
+      const comments = (pendingSocialComments.get(key) || []).filter(comment => comment.id !== commentId);
+      if (comments.length) pendingSocialComments.set(key, comments);
+      else pendingSocialComments.delete(key);
+      try {
+        window.localStorage.setItem(
+          pendingSocialCommentsStorageKey,
+          JSON.stringify(Object.fromEntries(pendingSocialComments))
+        );
+      } catch (error) {
+        console.warn('No se pudo actualizar el almacenamiento de comentarios pendientes:', error);
       }
     }
 
@@ -3464,10 +3517,46 @@
       }
     }
 
+    function createPersistentCommentRow(comment, video, authorNames) {
+      const row = document.createElement('article');
+      row.className = 'border-b border-line py-4 last:border-0';
+      const header = document.createElement('div');
+      header.className = 'flex items-center justify-between gap-3';
+      const author = document.createElement('span');
+      author.className = 'text-xs font-semibold text-zinc-200';
+      author.textContent = authorNames.get(comment.user_id)
+        || (currentUser?.id === comment.user_id ? currentUser.user_metadata?.full_name || currentUser.email || 'Tú' : `Canal · ${comment.user_id.slice(0, 8)}`);
+      const date = document.createElement('time');
+      date.className = 'text-[11px] text-zinc-500';
+      date.dateTime = comment.created_at;
+      date.textContent = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(comment.created_at));
+      header.append(author, date);
+      if (!comment.localPending && (currentUser?.id === comment.user_id || currentUser?.id === video.userId)) {
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.dataset.deleteComment = comment.id;
+        remove.className = 'rounded-lg px-2 py-1 text-xs text-zinc-500 transition hover:text-rose-300';
+        remove.textContent = 'Eliminar';
+        remove.setAttribute('aria-label', 'Eliminar comentario');
+        header.append(remove);
+      }
+      const body = document.createElement('p');
+      body.className = 'mt-2 whitespace-pre-wrap break-words text-sm leading-5 text-zinc-300';
+      body.textContent = comment.content;
+      row.append(header, body);
+      return row;
+    }
+
     async function refreshPersistentSocial(video, renderVersion = persistentSocialVersion) {
       if (renderVersion !== persistentSocialVersion || currentPlayback?.id !== video.id) return null;
       const panel = playbackSocial;
       const userId = currentUser && uuidPattern.test(currentUser.id) ? currentUser.id : null;
+      const localReactionState = userId
+        ? simulatedReactionStates.get(simulatedReactionKey(video.id, userId))
+        : null;
+      const localComments = userId
+        ? pendingSocialComments.get(pendingSocialCommentsKey(video.id, userId)) || []
+        : [];
       const [likesResult, dislikesResult, voteResult, commentsResult, bookmarkResult] = await Promise.all([
         supabaseClient.from('video_reactions').select('video_id', { count: 'exact', head: true }).eq('video_id', video.id).eq('vote', 'like'),
         supabaseClient.from('video_reactions').select('video_id', { count: 'exact', head: true }).eq('video_id', video.id).eq('vote', 'dislike'),
@@ -3480,8 +3569,11 @@
           ? supabaseClient.from('video_bookmarks').select('video_id').eq('video_id', video.id).eq('user_id', userId).maybeSingle()
           : Promise.resolve({ data: null, error: null })
       ]);
-      for (const result of [voteResult, commentsResult, bookmarkResult]) {
-        if (result.error) throw result.error;
+      const hasLocalFallback = Boolean(localReactionState || localComments.length);
+      if (!hasLocalFallback) {
+        for (const result of [voteResult, commentsResult, bookmarkResult]) {
+          if (result.error) throw result.error;
+        }
       }
       const likeButton = panel.querySelector('[data-social-action="like"]');
       const dislikeButton = panel.querySelector('[data-social-action="dislike"]');
@@ -3489,31 +3581,29 @@
       const previousDislikes = Number(dislikeButton.querySelector('[data-social-count]').textContent);
       if (likesResult.error) {
         console.error('No se pudo sincronizar el contador de Me gusta:', likesResult.error);
-        showToast(`No se pudo actualizar el contador de Me gusta; se conserva el último valor conocido. ${likesResult.error.message || ''}`.trim());
       }
       if (dislikesResult.error) {
         console.error('No se pudo sincronizar el contador de No me gusta:', dislikesResult.error);
-        showToast(`No se pudo actualizar el contador de No me gusta; se conserva el último valor conocido. ${dislikesResult.error.message || ''}`.trim());
       }
       if (renderVersion !== persistentSocialVersion
           || currentPlayback?.id !== video.id
           || (currentUser?.id || null) !== userId) return;
-      const comments = Array.isArray(commentsResult.data) ? commentsResult.data : [];
-      const authorIds = [...new Set(comments.map(comment => comment.user_id).filter(Boolean))];
+      const comments = [
+        ...(Array.isArray(commentsResult.data) ? commentsResult.data : []),
+        ...localComments.map(comment => ({ ...comment, localPending: true }))
+      ];
+      const authorIds = [...new Set(comments.filter(comment => !comment.localPending).map(comment => comment.user_id).filter(Boolean))];
       let authorProfiles = [];
       if (authorIds.length) {
         const { data, error } = await supabaseClient.from('channel_profiles')
           .select('user_id, display_name').in('user_id', authorIds);
-        if (error) throw error;
-        authorProfiles = data || [];
+        if (error) console.warn('No se pudieron cargar los nombres de los autores de los comentarios:', error);
+        else authorProfiles = data || [];
       }
       if (renderVersion !== persistentSocialVersion
           || currentPlayback?.id !== video.id
           || (currentUser?.id || null) !== userId) return;
       const authorNames = new Map(authorProfiles.map(profile => [profile.user_id, profile.display_name]));
-      const localReactionState = userId
-        ? simulatedReactionStates.get(simulatedReactionKey(video.id, userId))
-        : null;
       const vote = localReactionState ? localReactionState.vote : voteResult.data?.vote || null;
       const likes = localReactionState ? localReactionState.likes : Number.isInteger(likesResult.count) && likesResult.count >= 0
         ? likesResult.count
@@ -3535,40 +3625,14 @@
         button.classList.toggle('text-zinc-300', !selected);
       });
       const bookmarkButton = panel.querySelector('[data-social-action="bookmark"]');
-      bookmarkButton.dataset.saved = String(Boolean(bookmarkResult.data));
-      bookmarkButton.querySelector('[data-social-label]').textContent = bookmarkResult.data ? 'Guardado' : 'Guardar';
+      if (!bookmarkResult.error) {
+        bookmarkButton.dataset.saved = String(Boolean(bookmarkResult.data));
+        bookmarkButton.querySelector('[data-social-label]').textContent = bookmarkResult.data ? 'Guardado' : 'Guardar';
+      }
 
       const list = panel.querySelector('[data-persistent-comments]');
       list.replaceChildren();
-      comments.forEach(comment => {
-        const row = document.createElement('article');
-        row.className = 'border-b border-line py-4 last:border-0';
-        const header = document.createElement('div');
-        header.className = 'flex items-center justify-between gap-3';
-        const author = document.createElement('span');
-        author.className = 'text-xs font-semibold text-zinc-200';
-        author.textContent = authorNames.get(comment.user_id)
-          || (currentUser?.id === comment.user_id ? currentUser.user_metadata?.full_name || currentUser.email || 'Tú' : `Canal · ${comment.user_id.slice(0, 8)}`);
-        const date = document.createElement('time');
-        date.className = 'text-[11px] text-zinc-500';
-        date.dateTime = comment.created_at;
-        date.textContent = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(comment.created_at));
-        header.append(author, date);
-        if (currentUser?.id === comment.user_id || currentUser?.id === video.userId) {
-          const remove = document.createElement('button');
-          remove.type = 'button';
-          remove.dataset.deleteComment = comment.id;
-          remove.className = 'rounded-lg px-2 py-1 text-xs text-zinc-500 transition hover:text-rose-300';
-          remove.textContent = 'Eliminar';
-          remove.setAttribute('aria-label', 'Eliminar comentario');
-          header.append(remove);
-        }
-        const body = document.createElement('p');
-        body.className = 'mt-2 whitespace-pre-wrap break-words text-sm leading-5 text-zinc-300';
-        body.textContent = comment.content;
-        row.append(header, body);
-        list.append(row);
-      });
+      comments.forEach(comment => list.append(createPersistentCommentRow(comment, video, authorNames)));
       panel.querySelector('[data-persistent-comment-count]').textContent = String(comments.length);
       return synchronizedVoteState;
     }
@@ -3682,6 +3746,7 @@
           likes: Math.max(0, previousState.likes + (nextVote === 'like' ? 1 : 0) - (currentVote === 'like' ? 1 : 0)),
           dislikes: Math.max(0, previousState.dislikes + (nextVote === 'dislike' ? 1 : 0) - (currentVote === 'dislike' ? 1 : 0))
         };
+        persistentSocialVersion++;
         const renderVoteState = state => {
           likeButton.querySelector('[data-social-count]').textContent = String(state.likes);
           dislikeButton.querySelector('[data-social-count]').textContent = String(state.dislikes);
@@ -3711,21 +3776,11 @@
             if (synchronizedVoteState) renderVoteState(synchronizedVoteState);
           } catch (error) {
             console.error('No se pudieron actualizar los contadores del video:', error);
-            showToast(`Tu voto se guardó, pero no se pudieron actualizar los contadores: ${error.message || 'inténtalo de nuevo.'}`);
           }
         } catch (error) {
-          const permissionDenied = error?.code === '42501'
-            || [401, 403, '401', '403'].includes(error?.status ?? error?.statusCode)
-            || /permission denied|row-level security|not authorized/i.test(error?.message || '');
-          if (permissionDenied) {
-            console.warn('Supabase rechazó el voto por permisos; se conserva un contador simulado localmente.', error);
-            saveSimulatedReaction(video.id, userId, nextState);
-            renderVoteState(nextState);
-            showToast('Supabase no permite guardar el voto; se conserva el contador simulado en este navegador.');
-          } else {
-            renderVoteState(previousState);
-            showToast(`No se pudo guardar tu voto: ${error.message || 'inténtalo de nuevo.'}`);
-          }
+          console.warn('No se pudo guardar el voto en Supabase; se conserva localmente.', error);
+          saveSimulatedReaction(video.id, userId, nextState);
+          renderVoteState(nextState);
         } finally {
           voteButtons.forEach(voteButton => { voteButton.disabled = false; });
         }
@@ -3742,18 +3797,37 @@
         const content = commentInput.value.trim();
         if (!content) return;
         const submitButton = event.target.querySelector('button[type="submit"]');
+        const userId = currentUser.id;
+        const comment = {
+          id: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          user_id: userId,
+          content,
+          created_at: new Date().toISOString()
+        };
+        persistentSocialVersion++;
+        savePendingSocialComment(video.id, userId, comment);
+        const commentList = panel.querySelector('[data-persistent-comments]');
+        const authorNames = new Map();
+        commentList.append(createPersistentCommentRow({ ...comment, localPending: true }, video, authorNames));
+        const commentCount = panel.querySelector('[data-persistent-comment-count]');
+        commentCount.textContent = String(Number(commentCount.textContent) + 1);
+        event.target.reset();
         submitButton.disabled = true;
         try {
           const { error } = await supabaseClient.from('video_comments').insert({
             video_id: video.id,
-            user_id: currentUser.id,
+            user_id: userId,
             content
           });
           if (error) throw error;
-          event.target.reset();
-          await refreshPersistentSocial(video);
+          removePendingSocialComment(video.id, userId, comment.id);
+          try {
+            await refreshPersistentSocial(video);
+          } catch (error) {
+            console.warn('No se pudo actualizar la lista de comentarios desde Supabase:', error);
+          }
         } catch (error) {
-          showToast(`No se pudo publicar el comentario: ${error.message || 'inténtalo de nuevo.'}`);
+          console.warn('No se pudo publicar el comentario en Supabase; se conserva localmente.', error);
         } finally {
           submitButton.disabled = false;
         }
