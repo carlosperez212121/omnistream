@@ -199,17 +199,27 @@
               Tu navegador no admite la reproducción de video.
             </video>
           </div>
-          <div class="mt-3 flex items-center justify-between gap-3" role="group" aria-label="Controles de reproducción">
+          <div class="mt-3 flex flex-wrap items-center justify-between gap-3" role="group" aria-label="Controles de reproducción">
             <button type="button" data-player-action="previous" class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Video anterior">
               <i data-lucide="skip-back" class="h-4 w-4"></i><span>Anterior</span>
             </button>
             <button type="button" data-player-action="toggle" class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-bold text-ink transition hover:bg-zinc-200" aria-label="Reproducir video">
               <i data-player-icon data-lucide="play" class="h-4 w-4"></i><span data-player-label>Reproducir</span>
             </button>
+            <label class="flex items-center gap-2 text-xs font-medium text-zinc-400">
+              <span>Calidad</span>
+              <select id="playbackQuality" class="rounded-full border border-line bg-panel px-3 py-2.5 text-sm text-white outline-none focus:border-ember/50" aria-label="Calidad de reproducción">
+                <option value="144p">144p</option>
+                <option value="360p" selected>360p</option>
+                <option value="720p">720p</option>
+                <option value="1080p">1080p</option>
+              </select>
+            </label>
             <button type="button" data-player-action="next" class="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Siguiente video">
               <span>Siguiente</span><i data-lucide="skip-forward" class="h-4 w-4"></i>
             </button>
           </div>
+          <p id="playbackQualityStatus" class="mt-2 text-xs text-zinc-500" aria-live="polite"></p>
           <div class="mt-5 flex flex-wrap items-start justify-between gap-3">
             <h1 id="playbackTitle" class="text-xl font-bold leading-7 text-white sm:text-2xl">Video</h1>
           </div>
@@ -706,6 +716,8 @@
     }));
 
     const mainPlayerVideo = document.getElementById('mainPlayerVideo');
+    const playbackQualitySelect = document.getElementById('playbackQuality');
+    const playbackQualityStatus = document.getElementById('playbackQualityStatus');
     const playbackVideoContainer = document.getElementById('playbackVideoContainer');
     const miniPlayer = document.getElementById('miniPlayer');
     const miniPlayerVideoContainer = document.getElementById('miniPlayerVideoContainer');
@@ -719,6 +731,7 @@
     let currentPlayback = null;
     let playbackStartVersion = 0;
     let playbackNavigationPending = false;
+    const playbackQualities = ['144p', '360p', '720p', '1080p'];
     const playbackEditVideo = document.getElementById('playbackEditVideo');
     const editVideoModal = document.getElementById('editVideoModal');
     const editVideoForm = document.getElementById('editVideoForm');
@@ -989,9 +1002,20 @@
     });
 
     function openMainPlayer(source, video) {
+      playbackStartVersion++;
+      releaseMainPlayerSource();
       currentPlayback = video;
+      currentPlayback.originalSource = source;
       updatePlaybackEditButton();
-      mainPlayerVideo.src = source;
+      playbackQualitySelect.value = '360p';
+      const selectedQualitySource = video.qualitySources?.[playbackQualitySelect.value];
+      const hasSelectedQualitySource = typeof selectedQualitySource === 'string'
+        && isValidThumbnailUrl(selectedQualitySource);
+      mainPlayerVideo.preload = 'metadata';
+      mainPlayerVideo.src = hasSelectedQualitySource ? selectedQualitySource : source;
+      playbackQualityStatus.textContent = hasSelectedQualitySource
+        ? 'Reproduciendo en 360p.'
+        : 'Calidad simulada: este video solo tiene disponible su archivo original.';
       if (video.thumbnailPreviewUrl || video.thumbnailUrl) mainPlayerVideo.poster = video.thumbnailPreviewUrl || video.thumbnailUrl;
       else mainPlayerVideo.removeAttribute('poster');
       document.getElementById('playbackTitle').textContent = video.title || 'Video';
@@ -1029,6 +1053,48 @@
       playbackView.scrollIntoView({ behavior: 'smooth', block: 'start' });
       requestMainPlayerPlay();
     }
+
+    function releaseMainPlayerSource() {
+      mainPlayerVideo.pause();
+      mainPlayerVideo.removeAttribute('src');
+      mainPlayerVideo.load();
+    }
+
+    function changePlaybackQuality(quality) {
+      if (!playbackQualities.includes(quality) || !currentPlayback) return;
+      const configuredSource = currentPlayback.qualitySources?.[quality];
+      const hasQualitySource = typeof configuredSource === 'string' && isValidThumbnailUrl(configuredSource);
+      const source = hasQualitySource ? configuredSource : currentPlayback.originalSource;
+      if (!source) return;
+      if (source === mainPlayerVideo.currentSrc) {
+        playbackQualityStatus.textContent = hasQualitySource
+          ? `Reproduciendo en ${quality}.`
+          : `Calidad ${quality} simulada: se mantiene el archivo original.`;
+        return;
+      }
+
+      const playback = currentPlayback;
+      const playbackVersion = ++playbackStartVersion;
+      const currentTime = mainPlayerVideo.currentTime;
+      const wasPlaying = !mainPlayerVideo.paused && !mainPlayerVideo.ended;
+      mainPlayerVideo.addEventListener('loadedmetadata', () => {
+        if (currentPlayback !== playback || playbackStartVersion !== playbackVersion) return;
+        if (Number.isFinite(currentTime)) {
+          mainPlayerVideo.currentTime = Math.min(currentTime, mainPlayerVideo.duration || currentTime);
+        }
+        if (wasPlaying) requestMainPlayerPlay();
+      }, { once: true });
+      releaseMainPlayerSource();
+      mainPlayerVideo.preload = 'metadata';
+      mainPlayerVideo.src = source;
+      playbackQualityStatus.textContent = hasQualitySource
+        ? `Cambiando a ${quality}…`
+        : `Volviendo al archivo original (${quality} simulado)…`;
+    }
+
+    playbackQualitySelect.addEventListener('change', () => {
+      changePlaybackQuality(playbackQualitySelect.value);
+    });
 
     function getNavigableVideoCards() {
       return [...videoGrid.querySelectorAll('.community-card')]
@@ -1139,10 +1205,8 @@
     function closeMainPlayer() {
       playbackStartVersion++;
       if (mainPlayerVideo.parentElement === miniPlayerVideoContainer) playbackVideoContainer.append(mainPlayerVideo);
-      mainPlayerVideo.pause();
-      mainPlayerVideo.removeAttribute('src');
+      releaseMainPlayerSource();
       mainPlayerVideo.removeAttribute('poster');
-      mainPlayerVideo.load();
       mainPlayerVideo.controls = true;
       currentPlayback = null;
       updatePlaybackEditButton();
@@ -3372,8 +3436,20 @@
           ? supabaseClient.from('video_bookmarks').select('video_id').eq('video_id', video.id).eq('user_id', userId).maybeSingle()
           : Promise.resolve({ data: null, error: null })
       ]);
-      for (const result of [likesResult, dislikesResult, voteResult, commentsResult, bookmarkResult]) {
+      for (const result of [voteResult, commentsResult, bookmarkResult]) {
         if (result.error) throw result.error;
+      }
+      const likeButton = panel.querySelector('[data-social-action="like"]');
+      const dislikeButton = panel.querySelector('[data-social-action="dislike"]');
+      const previousLikes = Number(likeButton.querySelector('[data-social-count]').textContent);
+      const previousDislikes = Number(dislikeButton.querySelector('[data-social-count]').textContent);
+      if (likesResult.error) {
+        console.error('No se pudo sincronizar el contador de Me gusta:', likesResult.error);
+        showToast(`No se pudo actualizar el contador de Me gusta; se conserva el último valor conocido. ${likesResult.error.message || ''}`.trim());
+      }
+      if (dislikesResult.error) {
+        console.error('No se pudo sincronizar el contador de No me gusta:', dislikesResult.error);
+        showToast(`No se pudo actualizar el contador de No me gusta; se conserva el último valor conocido. ${dislikesResult.error.message || ''}`.trim());
       }
       if (renderVersion !== persistentSocialVersion
           || currentPlayback?.id !== video.id
@@ -3391,13 +3467,17 @@
           || currentPlayback?.id !== video.id
           || (currentUser?.id || null) !== userId) return;
       const authorNames = new Map(authorProfiles.map(profile => [profile.user_id, profile.display_name]));
-      const likeButton = panel.querySelector('[data-social-action="like"]');
-      const dislikeButton = panel.querySelector('[data-social-action="dislike"]');
       const vote = voteResult.data?.vote || null;
+      const likes = Number.isInteger(likesResult.count) && likesResult.count >= 0
+        ? likesResult.count
+        : previousLikes;
+      const dislikes = Number.isInteger(dislikesResult.count) && dislikesResult.count >= 0
+        ? dislikesResult.count
+        : previousDislikes;
       const synchronizedVoteState = {
         vote,
-        likes: likesResult.count || 0,
-        dislikes: dislikesResult.count || 0
+        likes,
+        dislikes
       };
       likeButton.querySelector('[data-social-count]').textContent = String(synchronizedVoteState.likes);
       dislikeButton.querySelector('[data-social-count]').textContent = String(synchronizedVoteState.dislikes);
