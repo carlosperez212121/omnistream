@@ -3357,7 +3357,7 @@
     }
 
     async function refreshPersistentSocial(video, renderVersion = persistentSocialVersion) {
-      if (renderVersion !== persistentSocialVersion || currentPlayback?.id !== video.id) return;
+      if (renderVersion !== persistentSocialVersion || currentPlayback?.id !== video.id) return null;
       const panel = playbackSocial;
       const userId = currentUser && uuidPattern.test(currentUser.id) ? currentUser.id : null;
       const [likesResult, dislikesResult, voteResult, commentsResult, bookmarkResult] = await Promise.all([
@@ -3393,9 +3393,14 @@
       const authorNames = new Map(authorProfiles.map(profile => [profile.user_id, profile.display_name]));
       const likeButton = panel.querySelector('[data-social-action="like"]');
       const dislikeButton = panel.querySelector('[data-social-action="dislike"]');
-      likeButton.querySelector('[data-social-count]').textContent = String(likesResult.count || 0);
-      dislikeButton.querySelector('[data-social-count]').textContent = String(dislikesResult.count || 0);
       const vote = voteResult.data?.vote || null;
+      const synchronizedVoteState = {
+        vote,
+        likes: likesResult.count || 0,
+        dislikes: dislikesResult.count || 0
+      };
+      likeButton.querySelector('[data-social-count]').textContent = String(synchronizedVoteState.likes);
+      dislikeButton.querySelector('[data-social-count]').textContent = String(synchronizedVoteState.dislikes);
       [likeButton, dislikeButton].forEach(button => {
         const selected = button.dataset.socialAction === vote;
         button.setAttribute('aria-pressed', String(selected));
@@ -3438,6 +3443,7 @@
         list.append(row);
       });
       panel.querySelector('[data-persistent-comment-count]').textContent = String(comments.length);
+      return synchronizedVoteState;
     }
 
     function renderPersistentSocial(video) {
@@ -3572,7 +3578,8 @@
             }, { onConflict: 'video_id,user_id' });
           if (result.error) throw result.error;
           try {
-            await refreshPersistentSocial(video);
+            const synchronizedVoteState = await refreshPersistentSocial(video);
+            if (synchronizedVoteState) renderVoteState(synchronizedVoteState);
           } catch (error) {
             console.error('No se pudieron actualizar los contadores del video:', error);
             showToast(`Tu voto se guardó, pero no se pudieron actualizar los contadores: ${error.message || 'inténtalo de nuevo.'}`);
